@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+# Development
+.vscode
+fof/custom
+!fof/custom/*.vpk

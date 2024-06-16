@@ -1,0 +1,6 @@
+[submodule "customguns-fof"]
+	path = customguns-fof
+	url = https://github.com/Baker80k/customguns-fof.git
+[submodule "sm-gungame-fof"]
+	path = sm-gungame-fof
+	url = https://github.com/Baker80k/sm-gungame-fof.git
