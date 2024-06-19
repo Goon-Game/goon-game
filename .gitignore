@@ -33,6 +33,7 @@
 
 # Development
 .vscode
+fof
 
 # wsl weirdness
 *:Zone.Identifier
