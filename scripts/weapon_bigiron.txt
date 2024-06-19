@@ -1,0 +1,137 @@
+// Peacemaker
+
+WeaponData
+{
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"			""
+	"viewmodel"			"models/weapons/v_bigiron.mdl"
+	"playermodel"		        "models/weapons/w_bigiron.mdl"
+	"anim_prefix"		"python"
+	"bucket"			"2"
+	"bucket_position"	"1"
+
+	"clip_size"			"6"
+	"default_clip"		"6"
+	"primary_ammo"		"357"
+	"secondary_ammo"	"None"
+
+	"weight"		"5"
+	"item_flags"		"0"
+
+	"damage"		"45"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+		"empty"		"Weapon_Peacemaker.Empty"
+		"single_shot"	"Weapon_Peacemaker.Single"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"font"		"WeaponIcons"
+				"character"	"P"
+		}
+		"weapon_s"
+		{	
+				"font"		"WeaponIconsSelected"
+				"character"	"P"
+		}
+		"ammo"
+		{
+				"font"		"WeaponIcons"
+				"character"	"q"
+		}
+		"crosshair"
+		{
+				"font"		"Crosshairs"
+				"character"	"Q"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+	
+	ExpOffset // Ironsight
+  	{
+	     "x"   "-2"
+ 	     "y"   "-1.9"
+	     "z"   "0.44"
+	     "xf"   "-2"
+ 	     "yf"   "-3.66"
+	     "zf"   "-0.5"
+      	}
+
+	Spread // 
+  	{
+	     "crouch"	"0.025"
+ 	     "idle"	"0.029"
+	     "walk"	"0.055"
+	     "run"	"0.18"
+	     "jump"	"0.35"
+	     "speed"	"0.5"		
+      	}
+
+
+	"break_limit"		"18"
+	"break_drop_penalty"	"4"
+	"GunSmokeMult"		"0.7"
+
+	"CustomGunsPluginData"
+	{
+		"name"						"bigiron"
+		
+		// mdl or vmt for selection menu
+		"model"						"models/weapons/w_bigiron.mdl"
+		
+		// make the gun usable only by admins who have this flag(s), or -1 to alow everyone to use the gun
+		"admin_level"				"-1"
+		
+		// add this gun to player's inventory on spawn?
+		"give_on_spawn"				"0"
+		
+		// add this gun to player's inventory when he equips this weapon
+		"give_with_weapon"			""
+		
+		// binds to this weapon, auto switching when player selects it; if set, both weapons should use the same ammo type and give_with_weapon should be set the same as this!
+		"bind_to_weapon"			""
+		
+		// if 1, does not disappear from inventory when player drops the physical weapon or is stripped from weapons; recommended for admin weapons or weapons given on spawn
+		"persistent"				"0"
+		
+		// I have no idea how to hook into setting the unique player animations in fof, such as sliding and horse riding.
+		// Each custom weapon will need to take over a regular fof weapon to inherit its player animations.
+		// fof_base - possible values:
+		//		pistol - (default) Pistol-like player animation, supercedes the colt navy
+		//		melee - Anything you smack somebody with, supercedes the axe 
+		//		large - Two-handded weapon, supercedes the shotgun
+		//		zoom - Anything the player can hold up to their eye, supercedes the sharps
+		//		boom - Player carries weapon above their head, supercedes dynamite
+		"fof_base"			"pistol"
+
+		// weapon_type - possible values:
+		//		bullet - (default) Standard bullet weapon, uses clip sizes and ammo type defined above
+		//		throwable - Throws something away from the player - grenades, molotovs, ..
+		//		custom - Custom coded weapon
+		"weapon_type"		"bullet"
+		
+		"custom_settings"
+		{
+			// * If set to 1, this custom gun will use game-defined ammo type (set above) and behavior instead of plugin managed ammo.
+			// * Fire functions will be managed by game, so they won't be called when the weapon runs out of ammo.
+			// * Use with CG_RemovePlayerAmmo() native
+			//
+			// ** Setting this to 0 will allow you to manage ammo ("m_iClip1" value) yourself via plugin. This overrides ammotype to an unknown value.
+			// ** Fire functions will always be called when the weapon is ready to fire, without any ammo checks. Also set this to 0 if your weapon doesn't use ammo.
+			// ** Set "primary_ammo" other than "None" to enable HUD ammo display.
+			"uses_game_ammo"		"1"
+		}
+}
