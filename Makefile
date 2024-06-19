@@ -53,12 +53,16 @@ customguns: customguns_plugin customguns_other
 
 
 override goongame_txts=$(shell find scripts -name '*.txt' 2>/dev/null)
-override goongame_weapon_folders=$(shell find $(WEAPON_MODEL_DIR) -maxdepth 1 -mindepth 1 -type d 2>/dev/null)
-override goongame_weapon_names=$(shell find $(WEAPON_MODEL_DIR) -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
-override goongame_weapon_models=$(shell find $(WEAPON_MODEL_DIR) -name '*.mdl' 2>/dev/null)
-override goongame_weapon_materials=$(shell find $(WEAPON_MODEL_DIR) -name '*.vmt' 2>/dev/null)
-#override goongame_weapon_worldmodels=$(WEAPON_MODEL_DIR)/$(goongame_weapon_names)/w_$(goongame_weapon_names).mdl
-#override goongame_weapon_models=$(WEAPON_MODEL_DIR)/$(goongame_weapon_names)/v_$(goongame_weapon_names).mdl
+
+override goongame_weapon_mdls=$(shell find $(WEAPON_MODEL_DIR) -name '*.mdl' 2>/dev/null)
+override goongame_weapon_vtxs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtx' 2>/dev/null)
+override goongame_weapon_phys=$(shell find $(WEAPON_MODEL_DIR) -name '*.phy' 2>/dev/null)
+override goongame_weapon_vvds=$(shell find $(WEAPON_MODEL_DIR) -name '*.vvd' 2>/dev/null)
+
+override goongame_weapon_vmts=$(shell find $(WEAPON_MODEL_DIR) -name '*.vmt' 2>/dev/null)
+override goongame_weapon_vtfs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtf' 2>/dev/null)
+
+override goongame_weapon_wavs=$(shell find $(WEAPON_MODEL_DIR) -name '*.wav' 2>/dev/null)
 # goongame_plugin:
 
 $(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
@@ -66,18 +70,19 @@ $(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
 	$(VPK) a $(custom_dir)/goongame_scripts.vpk $(goongame_txts)
 
 # TODO: this is extremely hacky, but VPK doesn't want to cooperate
-$(custom_dir)/goongame_models.vpk: $(goongame_weapon_models) $(goongame_weapon_materials)
-	${RM} $(custom_dir)/goongame_models.vpk
-	cp -u $(goongame_weapon_models) $(custom_dir)/goongame_models/models/weapons
-	$(VPK) $(custom_dir)/goongame_models
-#	cp -u $(goongame_weapon_materials) $(custom_dir)/goongame_models/materials/models/weapons
+$(custom_dir)/goongame_assets.vpk: $(goongame_weapon_mdls) $(goongame_weapon_vtxs) $(goongame_weapon_phys) $(goongame_weapon_vvds) $(goongame_weapon_vmts) $(goongame_weapon_vtfs) $(goongame_weapon_wavs)
+	${RM} $(custom_dir)/goongame_assets.vpk
+	(cd $(WEAPON_MODEL_DIR)/.. && make)
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)
 
-goongame: $(custom_dir)/goongame_scripts.vpk $(custom_dir)/goongame_models.vpk
+goongame: $(custom_dir)/goongame_scripts.vpk $(custom_dir)/goongame_assets.vpk
 
 all: customguns goongame
 
 # Copy only updated stuff to server and client
 upload: all
+	${RM} $(FOF_SERVER_DIR)/fof/custom/*.cache
+	${RM} "$(FOF_INSTALL_DIR)/fof/custom/*.cache"
 	cp -r -u fof $(FOF_SERVER_DIR)
 	cp -r -u fof/custom "$(FOF_INSTALL_DIR)/fof"
 
@@ -100,14 +105,3 @@ test:
 	echo $(shell pwd)
 	(cd $(WEAPON_STAGING_DIR)/.. && echo $(shell pwd))
 
-test2:
-	echo test2
-	
-
-#echo $(shell find goongame_models -name '*.mdl' 2>/dev/null)
-
-#echo $(goongame_weapon_models)
-
-
-vpk_huh:
-	$(VPK) -?
