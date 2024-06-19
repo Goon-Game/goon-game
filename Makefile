@@ -31,11 +31,12 @@ override sourcemod_incs=$(shell find $(sourcemod_incs_dir) -name '*.inc' 2>/dev/
 override customguns_sps=$(shell find customguns-fof/scripting -name '*.sp' 2>/dev/null)
 override customguns_incs=customguns-fof/scripting/include $(sourcemod_incs)
 override customguns_inc_flags=$(addprefix -i ,$(customguns_incs))
+override customguns_inc_files=$(shell find customguns-fof/scripting/include -name '*.inc')
 
 customguns_plugin: $(customguns_sps:customguns-fof/scripting/%.sp=$(plugins_dir)/%.smx)
 
-$(plugins_dir)/%.smx: customguns-fof/scripting/%.sp $(customguns_incs)
-	$(SPCOMP) $< -o $@ $(customguns_inc_flags) -O2 -v2
+$(plugins_dir)/%.smx: customguns-fof/scripting/%.sp $(customguns_incs) $(customguns_inc_files)
+	@$(SPCOMP) $< -o $@ $(customguns_inc_flags) -O2 -v2
 
 # Other
 customguns_other: fof/addons/sourcemod/gamedata/customguns.txt fof/addons/sourcemod/configs/customguns_styles.txt
