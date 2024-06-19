@@ -73,21 +73,22 @@ $(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
 $(custom_dir)/goongame_assets.vpk: $(goongame_weapon_mdls) $(goongame_weapon_vtxs) $(goongame_weapon_phys) $(goongame_weapon_vvds) $(goongame_weapon_vmts) $(goongame_weapon_vtfs) $(goongame_weapon_wavs)
 	${RM} $(custom_dir)/goongame_assets.vpk
 	(cd $(WEAPON_MODEL_DIR)/.. && make)
-	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)
 
-goongame: $(custom_dir)/goongame_scripts.vpk $(custom_dir)/goongame_assets.vpk
+goongame: $(custom_dir)/goongame_scripts.vpk 
 
 all: customguns goongame
 
 # Copy only updated stuff to server and client
-upload: all
+upload: all $(custom_dir)/goongame_assets.vpk
 	${RM} $(FOF_SERVER_DIR)/fof/custom/*.cache
 	${RM} "$(FOF_INSTALL_DIR)/fof/custom/*.cache"
 	cp -r -u fof $(FOF_SERVER_DIR)
 	cp -r -u fof/custom "$(FOF_INSTALL_DIR)/fof"
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk "$(FOF_INSTALL_DIR)/fof"
 
 # # Make a zip folder containing everything
-release_zip: all
+release_zip: all $(custom_dir)/goongame_assets.vpk
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)
 	zip -r goongame.zip fof
 
 clean:
@@ -95,6 +96,7 @@ clean:
 	$(RM) fof/addons/sourcemod/gamedata/*.txt
 	$(RM) fof/addons/sourcemod/plugins/*.smx
 	$(RM) fof/custom/*.vpk
+	$(RM) $(WEAPON_MODEL_DIR)/../goongame_assets.vpk
 	$(RM) "$(FOF_INSTALL_DIR)/fof/custom/*.vpk"
 	$(RM) $(FOF_SERVER_DIR)/fof/custom/*.vpk
 	

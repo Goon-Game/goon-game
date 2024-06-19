@@ -33,7 +33,7 @@ WeaponData
 		"admin_level"				"-1"
 		
 		// add this gun to player's inventory on spawn?
-		"give_on_spawn"				"1"
+		"give_on_spawn"				"0"
 		
 		// add this gun to player's inventory when he equips this weapon
 		"give_with_weapon"			""
