@@ -8,7 +8,7 @@ WeaponData
 	// more prefixes can be found in weapon scripts files
 	"anim_prefix"			"ar2"
 
-	"primary_ammo"			"SMG1"
+	"primary_ammo"			"None"
 	"secondary_ammo"		"None"
 	"clip_size"				"-1"
 	"default_clip"			"100"
@@ -39,10 +39,10 @@ WeaponData
 		"admin_level"				"-1"
 		
 		// add this gun to player's inventory on spawn?
-		"give_on_spawn"				"1"
+		"give_on_spawn"				"0"
 		
 		// add this gun to player's inventory when he equips this weapon
-		"give_with_weapon"			"weapon_smg1"
+		"give_with_weapon"			""
 		
 		// binds to this weapon, auto switching when player selects it; if set, both weapons should use the same ammo type and give_with_weapon should be set the same as this!
 		"bind_to_weapon"			""
