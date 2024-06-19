@@ -11,4 +11,4 @@ Copy fof/custom/*.vpk to your custom folder. Note this is necessary for all play
 
 ## Added Weapons
 
-None yet
+HL2 Crowbar

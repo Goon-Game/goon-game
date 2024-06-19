@@ -10,11 +10,11 @@ SHELL=/bin/bash
 # This is for my setup where I have a windows machine with the game,
 # while my dev environment and fof server is on wsl
 # For your own use, set these things in your .bashrc to whatever
-VPK="$(FOF_INSTALL_DIR)/../sdk/bin/vpk.exe"
-STUDIOMDL="$(FOF_INSTALL_DIR)/../sdk/bin/studiomdl.exe"
-SPCOMP="$(FOF_SERVER_DIR)/addons/sourcemod/scripting/spcomp"
+VPK="$(FOF_INSTALL_DIR)/sdk/bin/vpk.exe"
+STUDIOMDL="$(FOF_INSTALL_DIR)/sdk/bin/studiomdl.exe"
+SPCOMP="$(FOF_SERVER_DIR)/fof/addons/sourcemod/scripting/spcomp"
 
-override sourcemod_incs_dir="$(FOF_SERVER_DIR)/addons/sourcemod/scripting/include"
+override sourcemod_incs_dir="$(FOF_SERVER_DIR)/fof/addons/sourcemod/scripting/include"
 override plugins_dir=fof/addons/sourcemod/plugins
 override custom_dir=fof/custom
 
@@ -47,16 +47,28 @@ customguns: customguns_plugin customguns_other
 # gungame_plugin:
 
 
+override goongame_txts=$(shell find scripts -name '*.txt' 2>/dev/null)
 # goongame_plugin:
 
-all: customguns
+$(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
+	$(VPK) a $(custom_dir)/goongame_scripts.vpk $(goongame_txts)
 
-# # Copy stuff to server and client
-# upload: all
+goongame: $(custom_dir)/goongame_scripts.vpk
+
+all: customguns goongame
+
+# Copy only updated stuff to server and client
+upload: all
+	cp -r -u fof $(FOF_SERVER_DIR)
+	cp -r -u fof/custom "$(FOF_INSTALL_DIR)"
 
 # # Make a zip folder containing everything
-# release_zip: all
+release_zip: all
+	zip -r goongame.zip fof
 
 clean:
+	rm fof/addons/sourcemod/configs/*.txt
+	rm fof/addons/sourcemod/gamedata/*.txt
 	rm fof/addons/sourcemod/plugins/*.smx
+	rm fof/custom/*.vpk
 	

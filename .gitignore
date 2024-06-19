@@ -33,5 +33,6 @@
 
 # Development
 .vscode
-fof/custom
-!fof/custom/*.vpk
+
+# wsl weirdness
+*:Zone.Identifier
