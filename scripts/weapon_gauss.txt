@@ -58,7 +58,9 @@ WeaponData
 		//		large - Two-handded weapon, supercedes the shotgun
 		//		zoom - Anything the player can hold up to their eye, supercedes the sharps
 		//		boom - Player carries weapon above their head, supercedes dynamite
-		"fof_base"			"large"
+		"fof_base"			"weapon_coachgun"
+
+		"use_dynamic"		"0"
 		
 		// weapon_type - possible values:
 		//		bullet - (default) Standard bullet weapon, uses clip sizes and ammo type defined above

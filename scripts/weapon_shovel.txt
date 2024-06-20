@@ -29,6 +29,9 @@ WeaponData
 		// mdl or vmt for selection menu
 		"model"						"models/weapons/w_shovel.mdl"
 		
+		// Model for dynamic prop viewmodel
+		"viewmodel"					"models/weapons/v_shovel.mdl"
+
 		// make the gun usable only by admins who have this flag(s), or -1 to alow everyone to use the gun
 		"admin_level"				"-1"
 		
@@ -52,7 +55,9 @@ WeaponData
 		//		large - Two-handded weapon, supercedes the shotgun
 		//		zoom - Anything the player can hold up to their eye, supercedes the sharps
 		//		boom - Player carries weapon above their head, supercedes dynamite
-		"fof_base"			"melee"
+		"fof_base"			"weapon_axe"
+		
+		"use_dynamic"		"1"
 
 		// weapon_type - possible values:
 		//		bullet - (default) Standard bullet weapon, uses clip sizes and ammo type defined above
