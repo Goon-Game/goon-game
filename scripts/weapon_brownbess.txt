@@ -102,10 +102,11 @@ WeaponData
 
 	"CustomGunsPluginData"
 	{
-		"name"						"bigiron"
+		"name"						"brownbess"
 		
 		// mdl or vmt for selection menu
-		"model"						"models/weapons/w_bigiron.mdl"
+		"model"						"models/weapons/w_brownbess.mdl"
+		"viewmodel"					"models/weapons/v_brownbess.mdl"
 		
 		// make the gun usable only by admins who have this flag(s), or -1 to alow everyone to use the gun
 		"admin_level"				"-1"
@@ -124,19 +125,14 @@ WeaponData
 		
 		// I have no idea how to hook into setting the unique player animations in fof, such as sliding and horse riding.
 		// Each custom weapon will need to take over a regular fof weapon to inherit its player animations.
-		// fof_base - possible values:
-		//		pistol - (default) Pistol-like player animation, supercedes the colt navy
-		//		melee - Anything you smack somebody with, supercedes the axe 
-		//		large - Two-handded weapon, supercedes the shotgun
-		//		zoom - Anything the player can hold up to their eye, supercedes the sharps
-		//		boom - Player carries weapon above their head, supercedes dynamite
-		"fof_base"			"zoom"
+		"fof_base"			"weapon_sharps"
 
 		// weapon_type - possible values:
 		//		bullet - (default) Standard bullet weapon, uses clip sizes and ammo type defined above
 		//		throwable - Throws something away from the player - grenades, molotovs, ..
 		//		custom - Custom coded weapon
 		"weapon_type"		"bullet"
+		"use_dynamic"		"0"
 		
 		"custom_settings"
 		{
