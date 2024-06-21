@@ -65,7 +65,16 @@ override goongame_weapon_vmts=$(shell find $(WEAPON_MODEL_DIR) -name '*.vmt' 2>/
 override goongame_weapon_vtfs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtf' 2>/dev/null)
 
 override goongame_weapon_wavs=$(shell find $(WEAPON_MODEL_DIR) -name '*.wav' 2>/dev/null)
-# goongame_plugin:
+
+override goongame_sps=$(shell find goon_game -name '*.sp' 2>/dev/null)
+override goongame_incs=goon_game/include $(sourcemod_incs)
+override goongame_inc_flags=$(addprefix -i ,$(goongame_incs))
+override goongame_inc_files=$(shell find goon_game/include -name '*.inc')
+
+goongame_plugin: $(goongame_sps:goon_game/%.sp=$(plugins_dir)/%.smx)
+
+$(plugins_dir)/%.smx: goon_game/%.sp $(goongame_incs) $(goongame_inc_files) $(customguns_incs)
+	@$(SPCOMP) $< -o $@ $(goongame_inc_flags) $(customguns_inc_flags) -O2 -v2
 
 $(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
 	${RM} $(custom_dir)/goongame_scripts.vpk
@@ -77,7 +86,7 @@ $(custom_dir)/goongame_assets.vpk: $(goongame_weapon_mdls) $(goongame_weapon_vtx
 	(cd $(WEAPON_MODEL_DIR)/.. && make)
 	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)/goongame_assets.vpk 
 
-goongame: $(custom_dir)/goongame_scripts.vpk $(custom_dir)/goongame_assets.vpk 
+goongame: $(custom_dir)/goongame_scripts.vpk $(custom_dir)/goongame_assets.vpk goongame_plugin
 
 all: customguns goongame
 
