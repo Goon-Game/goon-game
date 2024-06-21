@@ -59,6 +59,8 @@ override goongame_weapon_vtxs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtx' 2>/
 override goongame_weapon_phys=$(shell find $(WEAPON_MODEL_DIR) -name '*.phy' 2>/dev/null)
 override goongame_weapon_vvds=$(shell find $(WEAPON_MODEL_DIR) -name '*.vvd' 2>/dev/null)
 
+override goongame_weapon_smds=$(shell find $(WEAPON_MODEL_DIR) -name '*.smd' 2>/dev/null)
+
 override goongame_weapon_vmts=$(shell find $(WEAPON_MODEL_DIR) -name '*.vmt' 2>/dev/null)
 override goongame_weapon_vtfs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtf' 2>/dev/null)
 
@@ -70,7 +72,7 @@ $(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
 	$(VPK) a $(custom_dir)/goongame_scripts.vpk $(goongame_txts)
 
 # TODO: this is extremely hacky, but VPK doesn't want to cooperate
-$(custom_dir)/goongame_assets.vpk: $(goongame_weapon_mdls) $(goongame_weapon_vtxs) $(goongame_weapon_phys) $(goongame_weapon_vvds) $(goongame_weapon_vmts) $(goongame_weapon_vtfs) $(goongame_weapon_wavs)
+$(custom_dir)/goongame_assets.vpk: $(goongame_weapon_mdls) $(goongame_weapon_vtxs) $(goongame_weapon_phys) $(goongame_weapon_vvds) $(goongame_weapon_vmts) $(goongame_weapon_vtfs) $(goongame_weapon_wavs) $(goongame_weapon_smds)
 	${RM} $(custom_dir)/goongame_assets.vpk
 	(cd $(WEAPON_MODEL_DIR)/.. && make)
 	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)/goongame_assets.vpk 

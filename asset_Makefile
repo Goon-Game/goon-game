@@ -27,7 +27,10 @@ override working_model_dir=$(shell basename $(WEAPON_MODEL_DIR))
 override goongame_weapon_folders=$(shell find $(working_model_dir) -maxdepth 1 -mindepth 1 -type d 2>/dev/null)
 override goongame_weapon_names=$(shell find $(working_model_dir) -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
 
-override goongame_weapon_mdls=$(shell find $(working_model_dir) -name '*.mdl' 2>/dev/null)
+override goongame_weapon_vmdls=$(foreach name,$(goongame_weapon_names),working_model_files/$(name)/v_$(name).mdl)
+override goongame_weapon_wmdls=$(foreach name,$(goongame_weapon_names),working_model_files/$(name)/w_$(name).mdl)
+override goongame_weapon_mdls=$(goongame_weapon_vmdls) $(goongame_weapon_wmdls)
+
 override goongame_weapon_vtxs=$(shell find $(working_model_dir) -name '*.vtx' 2>/dev/null)
 override goongame_weapon_phys=$(shell find $(working_model_dir) -name '*.phy' 2>/dev/null)
 override goongame_weapon_vvds=$(shell find $(working_model_dir) -name '*.vvd' 2>/dev/null)
@@ -58,3 +61,31 @@ goongame_assets.vpk: $(goongame_weapon_mdls) $(goongame_weapon_vtxs) $(goongame_
 
 	$(VPK) goongame_assets
 
+#@last_dir=$$(dirname $@ | awk -F/ '{print $$NF}'); \
+#echo "Processing file: $@ in directory: $$last_dir"; \
+
+$(goongame_weapon_vmdls): 
+	@name=$$(dirname $@ | awk -F/ '{print $$NF}'); \
+	cd "working_model_files/$$name/v_$$name"; \
+	$(STUDIOMDL) -game "F:\SteamLibrary\steamapps\common\Fistful of Frags\fof" -nop4 -verbose "v_$$name"; \
+	cd ../../..; \
+	mv /mnt/f/SteamLibrary/steamapps/common/Fistful\ of\ Frags/fof/models/weapons/* working_model_files/$$name/;
+
+$(goongame_weapon_wmdls): 
+	@name=$$(dirname $@ | awk -F/ '{print $$NF}'); \
+	cd "working_model_files/$$name/w_$$name"; \
+	$(STUDIOMDL) -game "F:\SteamLibrary\steamapps\common\Fistful of Frags\fof" -nop4 -verbose "w_$$name"; \
+	cd ../../..; \
+	mv /mnt/f/SteamLibrary/steamapps/common/Fistful\ of\ Frags/fof/models/weapons/* working_model_files/$$name/;
+
+test:
+	@echo "$(FOF_INSTALL_DIR)/fof/models/weapons/"
+	(cd working_model_files/bigiron/w_bigiron && \
+	$(STUDIOMDL) -game "F:\SteamLibrary\steamapps\common\Fistful of Frags\fof" -nop4 -verbose "w_bigiron")
+	@mv /mnt/f/SteamLibrary/steamapps/common/Fistful\ of\ Frags/fof/models/weapons/* working_model_files/bigiron/
+
+test2: $(goongame_weapon_wmdls)
+
+clean:
+	rm -r goongame_assets
+	rm goongame_assets.vpk
