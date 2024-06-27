@@ -80,13 +80,21 @@ $(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
 	${RM} $(custom_dir)/goongame_scripts.vpk
 	$(VPK) a $(custom_dir)/goongame_scripts.vpk $(goongame_txts)
 
+goongame_models: $(goongame_weapon_mdls) $(goongame_weapon_smds) $(goongame_weapon_vtxs) $(goongame_weapon_phys) $(goongame_weapon_vvds)
+goongame_materials: $(goongame_weapon_vmts) $(goongame_weapon_vtfs)
+
 # TODO: this is extremely hacky, but VPK doesn't want to cooperate
-$(custom_dir)/goongame_assets.vpk: $(goongame_weapon_mdls) $(goongame_weapon_vtxs) $(goongame_weapon_phys) $(goongame_weapon_vvds) $(goongame_weapon_vmts) $(goongame_weapon_vtfs) $(goongame_weapon_wavs) $(goongame_weapon_smds)
+$(WEAPON_MODEL_DIR)/../goongame_assets.vpk: goongame_models goongame_materials $(goongame_weapon_wavs) asset_makefile
 	${RM} $(custom_dir)/goongame_assets.vpk
 	(cd $(WEAPON_MODEL_DIR)/.. && make)
-	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)/goongame_assets.vpk 
+	
 
-goongame: $(custom_dir)/goongame_scripts.vpk $(custom_dir)/goongame_assets.vpk goongame_plugin
+$(WEAPON_MODEL_DIR)/../Makefile: workflow/asset_Makefile
+	cp workflow/asset_Makefile $(WEAPON_MODEL_DIR)/../Makefile
+
+asset_makefile: $(WEAPON_MODEL_DIR)/../Makefile
+
+goongame: $(custom_dir)/goongame_scripts.vpk $(WEAPON_MODEL_DIR)/../goongame_assets.vpk goongame_plugin
 
 all: customguns goongame
 
@@ -96,9 +104,12 @@ upload: all
 	${RM} -r "$(FOF_INSTALL_DIR)/fof/custom/*.cache"
 	cp -r -u fof $(FOF_SERVER_DIR)
 	cp -r -u fof/custom "$(FOF_INSTALL_DIR)/fof"
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(FOF_SERVER_DIR)/fof/custom/goongame_assets.vpk 
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(FOF_INSTALL_DIR)/fof/goongame_assets.vpk 
 
 # # Make a zip folder containing everything
 release_zip: all $(custom_dir)/goongame_assets.vpk
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)/goongame_assets.vpk 
 	zip -r goongame.zip fof
 
 clean:
@@ -113,7 +124,7 @@ clean:
 dirs:
 	@echo $(PROJ_DIR)
 
+# TODO: working on 
 test:
-	echo $(shell pwd)
-	(cd $(WEAPON_STAGING_DIR)/.. && echo $(shell pwd))
+	@echo $(shell find $(WEAPON_MODEL_DIR) -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
 

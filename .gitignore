@@ -32,6 +32,7 @@
 *.app
 
 # Development
+.venv
 .vscode
 fof
 
