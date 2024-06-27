@@ -85,12 +85,11 @@ goongame_materials: $(goongame_weapon_vmts) $(goongame_weapon_vtfs)
 
 # TODO: this is extremely hacky, but VPK doesn't want to cooperate
 $(WEAPON_MODEL_DIR)/../goongame_assets.vpk: goongame_models goongame_materials $(goongame_weapon_wavs) asset_makefile
-	${RM} $(custom_dir)/goongame_assets.vpk
+	${RM} $(WEAPON_MODEL_DIR)/../goongame_assets.vpk
 	(cd $(WEAPON_MODEL_DIR)/.. && make)
-	
 
 $(WEAPON_MODEL_DIR)/../Makefile: workflow/asset_Makefile
-	cp workflow/asset_Makefile $(WEAPON_MODEL_DIR)/../Makefile
+	cp -u workflow/asset_Makefile $(WEAPON_MODEL_DIR)/../Makefile
 
 asset_makefile: $(WEAPON_MODEL_DIR)/../Makefile
 
@@ -105,7 +104,7 @@ upload: all
 	cp -r -u fof $(FOF_SERVER_DIR)
 	cp -r -u fof/custom "$(FOF_INSTALL_DIR)/fof"
 	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(FOF_SERVER_DIR)/fof/custom/goongame_assets.vpk 
-	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(FOF_INSTALL_DIR)/fof/goongame_assets.vpk 
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk "$(FOF_INSTALL_DIR)/fof/goongame_assets.vpk"
 
 # # Make a zip folder containing everything
 release_zip: all $(custom_dir)/goongame_assets.vpk
@@ -118,6 +117,7 @@ clean:
 	$(RM) fof/addons/sourcemod/plugins/*.smx
 	$(RM) fof/custom/*.vpk
 	$(RM) $(WEAPON_MODEL_DIR)/../goongame_assets.vpk
+	$(RM) -r $(WEAPON_MODEL_DIR)/../goongame_assets
 	$(RM) "$(FOF_INSTALL_DIR)/fof/custom/*.vpk"
 	$(RM) $(FOF_SERVER_DIR)/fof/custom/*.vpk
 	
