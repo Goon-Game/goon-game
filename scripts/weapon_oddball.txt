@@ -44,17 +44,6 @@ WeaponData
 				"font"		"WeaponIconsSelected"
 				"character"	"d"
 		}
-		"ammo"
-		{
-				"font"		"WeaponIcons"
-				"character"	"d"
-		}
-		"ammo2"
-		{
-			
-				"font"		"WeaponIcons"
-				"character"	"d"
-		}
 		"crosshair"
 		{
 				"font"		"Crosshairs"
@@ -87,6 +76,9 @@ WeaponData
 		
 		// binds to this weapon, auto switching when player selects it; if set, both weapons should use the same ammo type and give_with_weapon should be set the same as this!
 		"bind_to_weapon"			""
+
+		// Prevents swapping to other weapons while this one is equipped
+		"stuck_to_weapon"			"1"
 		
 		// if 1, does not disappear from inventory when player drops the physical weapon or is stripped from weapons; recommended for admin weapons or weapons given on spawn
 		"persistent"				"0"

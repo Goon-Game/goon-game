@@ -3,8 +3,6 @@
 #include <sdkhooks>
 #include <customguns>
 
-#pragma newdecls required
-
 #define CLASSNAME "weapon_oddball"
 
 ConVar oddball_hit_damage;
@@ -73,7 +71,7 @@ public void OnMapStart()
 }
 
 public void OnPluginStart(){
-	oddball_hit_damage = CreateConVar("ob_hit_dmg", "200.0", "Sets the damage of an oddball melee hit.");
+    oddball_hit_damage = CreateConVar("ob_hit_dmg", "200.0", "Sets the damage of an oddball melee hit.");
 }
 
 public void CG_OnHolster(int client, int weapon, int switchingTo){
@@ -142,7 +140,7 @@ public void CG_OnPrimaryAttack(int client, int weapon){
 					}
 				}
 				SDKHooks_TakeDamage(entityHit, client, client, oddball_hit_damage.FloatValue, DMG_CLUB);
-                EmitHitSoundToAll(client);
+				EmitHitSoundToAll(client);
                 EmitYellSoundToAll(entityHit);
 			}
 			
