@@ -121,6 +121,7 @@ clean:
 	$(RM) fof/addons/sourcemod/plugins/*.smx
 	$(RM) fof/custom/*.vpk
 	$(RM) $(WEAPON_MODEL_DIR)/../goongame_assets.vpk
+	$(RM) $(WEAPON_MODEL_DIR)/*/*.mdl
 	$(RM) -r $(WEAPON_MODEL_DIR)/../goongame_assets
 	$(RM) "$(FOF_INSTALL_DIR)/fof/custom/*.vpk"
 	$(RM) $(FOF_SERVER_DIR)/fof/custom/*.vpk

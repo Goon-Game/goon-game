@@ -71,7 +71,7 @@ goongame_assets.vpk: goongame_models goongame_materials $(goongame_weapon_wavs)
 	$(VPK) goongame_assets
 
 #@last_dir=$$(dirname $@ | awk -F/ '{print $$NF}'); \
-#echo "Processing file: $@ in directory: $$last_dir"; \
+#echo "Processing file: $@ in directory: $$last_dir"; \ // update
 
 $(goongame_weapon_vmdls): $(goongame_weapon_vqcs)
 	@name=$$(dirname $@ | awk -F/ '{print $$NF}'); \

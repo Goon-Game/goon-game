@@ -132,7 +132,7 @@ WeaponData
 		//		throwable - Throws something away from the player - grenades, molotovs, ..
 		//		custom - Custom coded weapon
 		"weapon_type"		"bullet"
-		"use_dynamic"		"0"
+		"use_dynamic"		"1"
 		
 		"custom_settings"
 		{

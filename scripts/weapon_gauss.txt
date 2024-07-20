@@ -1,8 +1,8 @@
 WeaponData
 {
 	// Weapon data is loaded by both the Game and Client DLLs.
-	"viewmodel"				"models/weapons/v_gauss_suit.mdl"
-	"playermodel"			"models/weapons/w_gauss_suit.mdl"
+	"viewmodel"				"models/weapons/v_gauss.mdl"
+	"playermodel"			"models/weapons/w_gauss.mdl"
 		
 	// this prefix determines how player holds the gun in third person and will be used by customguns if this gun is custom
 	// more prefixes can be found in weapon scripts files
@@ -33,7 +33,8 @@ WeaponData
 		"name"						"Gauss"
 		
 		// mdl or vmt for selection menu
-		"model"						"models/weapons/w_gauss_suit.mdl" 
+		"model"						"models/weapons/w_gauss.mdl" 
+		"viewmodel"					"models/weapons/v_gauss.mdl"
 
 		// make the gun usable only by admins who have this flag(s), or -1 to alow everyone to use the gun
 		"admin_level"				"-1"
@@ -52,15 +53,8 @@ WeaponData
 
 		// I have no idea how to hook into setting the unique player animations in fof, such as sliding and horse riding.
 		// Each custom weapon will need to take over a regular fof weapon to inherit its player animations.
-		// fof_base - possible values:
-		//		pistol - (default) Pistol-like player animation, supercedes the colt navy
-		//		melee - Anything you smack somebody with, supercedes the axe 
-		//		large - Two-handded weapon, supercedes the shotgun
-		//		zoom - Anything the player can hold up to their eye, supercedes the sharps
-		//		boom - Player carries weapon above their head, supercedes dynamite
 		"fof_base"			"weapon_coachgun"
-
-		"use_dynamic"		"0"
+		"use_dynamic"		"1"
 		
 		// weapon_type - possible values:
 		//		bullet - (default) Standard bullet weapon, uses clip sizes and ammo type defined above
@@ -78,42 +72,6 @@ WeaponData
 			// ** Fire functions will always be called when the weapon is ready to fire, without any ammo checks. Also set this to 0 if your weapon doesn't use ammo.
 			// ** Set "primary_ammo" other than "None" to enable HUD ammo display.
 			"uses_game_ammo"		"1"
-		}
-		
-		"download"
-		{
-			"item"	"models/weapons/w_gauss_suit.mdl"
-			"item"	"models/weapons/w_gauss_suit.sw.vtx"
-			"item"	"models/weapons/w_gauss_suit.dx90.vtx"
-			"item"	"models/weapons/w_gauss_suit.dx80.vtx"
-			"item"	"models/weapons/w_gauss_suit.vvd"
-			"item"	"models/weapons/w_gauss_suit.phy"
-			
-			"item"	"models/weapons/v_gauss_suit.mdl"
-			"item"	"models/weapons/v_gauss_suit.sw.vtx"
-			"item"	"models/weapons/v_gauss_suit.dx90.vtx"
-			"item"	"models/weapons/v_gauss_suit.dx80.vtx"
-			"item"	"models/weapons/v_gauss_suit.vvd"
-			
-			"item"	"materials/models/weapons/v_gauss/back.vmt"
-			"item"	"materials/models/weapons/v_gauss/back.vtf"
-			"item"	"materials/models/weapons/v_gauss/capacitor.vmt"
-			"item"	"materials/models/weapons/v_gauss/capacitor.vtf"
-			"item"	"materials/models/weapons/v_gauss/coils.vmt"
-			"item"	"materials/models/weapons/v_gauss/coils.vtf"
-			"item"	"materials/models/weapons/v_gauss/details1.vmt"
-			"item"	"materials/models/weapons/v_gauss/details1.vtf"
-			"item"	"materials/models/weapons/v_gauss/generator.vmt"
-			"item"	"materials/models/weapons/v_gauss/generator.vtf"
-			"item"	"materials/models/weapons/v_gauss/glowchrome.vmt"
-			"item"	"materials/models/weapons/v_gauss/glowchrome.vtf"
-			"item"	"materials/models/weapons/v_gauss/spindle.vmt"
-			"item"	"materials/models/weapons/v_gauss/spindle.vtf"
-			"item"	"materials/models/weapons/v_gauss/supportarm.vmt"
-			"item"	"materials/models/weapons/v_gauss/supportarm.vtf"
-			
-			"item"	"materials/models/weapons/v_gauss/hand.vmt"
-			"item"	"materials/models/weapons/v_gauss/hand.vtf"
 		}
 	}
 }
