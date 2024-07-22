@@ -89,6 +89,7 @@ public void CG_OnPrimaryAttack(int client, int weapon){
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
 	
 	if(StrEqual(sWeapon, CLASSNAME)){
+		PrintToServer("Oddball Primary Attack!");
         CG_SetPlayerAnimation(client, PLAYER_ATTACK1);
 		CG_PlayPrimaryAttack(weapon);
 
