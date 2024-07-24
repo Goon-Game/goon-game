@@ -11,6 +11,13 @@
 float additionalTime[MAXPLAYERS+1];
 float nextEnergy[MAXPLAYERS+1];
 
+public OnClientPutInServer(int client)
+{
+	if (!IsFakeClient(client))
+	{
+		SDKHook(client, SDKHook_PostThinkPost, OnPostThinkPost);
+	}
+}
 
 public void CG_OnHolster(int client, int weapon, int switchingTo){
 	char sWeapon[32];
@@ -58,18 +65,47 @@ public void CG_ItemPostFrame(int client, int weapon){
 	}
 }
 
+public void OnPlayerRunCmdPre(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2]) {
+
+}
+
+bool toggle = true;
+
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
 {
 	if (!IsFakeClient(client))
 	{
 		char sWeapon[32];
 		GetClientWeapon(client, sWeapon, sizeof(sWeapon));
-		//GetClientWeapon
 		if(StrEqual(sWeapon, CLASSNAME)){
+			weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 			if (buttons & IN_RELOAD) {
-				PrintToServer("Attempting Reload of Weeze Wacker!");
-				CG_PlayReload(weapon);
+				if (toggle) {
+					PrintToServer("Attempting Reload of Weeze Wacker!");
+					CG_PlayReload(weapon);
+					toggle = false;
+				} else {
+					PrintToServer("Attempting Fire of Weeze Wacker!");
+					CG_PlayPrimaryAttack(weapon);
+					toggle = true;
+				}
 			}
+		}
+	}
+}
+
+public OnPostThinkPost(client) {
+	if (!IsFakeClient(client) && IsPlayerAlive(client)){
+		char sWeapon[32];
+		GetClientWeapon(client, sWeapon, sizeof(sWeapon));
+		if(StrEqual(sWeapon, CLASSNAME)) {
+			// Prevent client-side prediction
+			float delayAttack = GetGameTime() + 999.0;
+			int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+			SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", delayAttack);
+			SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", delayAttack);
+			//float accuracy = GetEntPropFloat(weapon, Prop_Data, "m_flAccuracyPenalty");
+			//PrintToServer("Weapon Accuracy: %f", accuracy);
 		}
 	}
 }
