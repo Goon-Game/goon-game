@@ -12,6 +12,7 @@
 #define SPREAD 0.00873 // -> VECTOR_CONE_1DEGREES
 
 float timeToNextAction[MAXPLAYERS+1];
+bool reloading[MAXPLAYERS+1];
 
 char g_FireSounds[][] = {
 	"weapons/carbine/smith_carbine_fire.wav"
@@ -58,6 +59,8 @@ public OnClientPutInServer(int client)
 	if (!IsFakeClient(client))
 	{
 		SDKHook(client, SDKHook_PostThinkPost, OnPostThinkPost);
+		timeToNextAction[client] = 1.0;
+		reloading[client] = false;
 	}
 }
 
@@ -66,7 +69,8 @@ public void CG_OnHolster(int client, int weapon, int switchingTo){
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
 	
 	if(StrEqual(sWeapon, CLASSNAME)){
-		timeToNextAction[client] = 0.0;
+		timeToNextAction[client] = 0.1;
+		reloading[client] = false;
 	}
 }
 
@@ -76,7 +80,7 @@ public void WWPrimaryAttack(int client, int weapon){
 		timeToNextAction[client] = 1.0;
 	} else {
 		PrintToServer("WW Fired with %d bullets!", bullets);
-		SetEntProp(weapon, Prop_Send, "m_iClip1", bullets-1);
+		SetEntProp(weapon, Prop_Send, "m_iClip1", 0);
 		CG_SetPlayerAnimation(client, PLAYER_ATTACK1);
 		CG_PlayActivity(weapon, ACT_VM_PRIMARYATTACK);
 		PlaySound(weapon, 1);
@@ -135,11 +139,11 @@ void PrimaryFire(int client, int weapon) {
 
 public void WWReload(int client, int weapon) {
 	int bullets = GetEntProp(weapon, Prop_Send, "m_iClip1");
-	if (bullets != 6) {
+	if (bullets < 1) {
 		CG_PlayReload(weapon);
 		float seqDuration = GetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle") - GetGameTime();
 		timeToNextAction[client] = seqDuration;
-		SetEntProp(weapon, Prop_Send, "m_iClip1", 6); // TODO: need to have a 'reloading' state so you can't just flip weapon away
+		reloading[client] = true;
 	}
 }
 
@@ -149,13 +153,12 @@ public void CG_ItemPostFrame(int client, int weapon){
 	
 	if(StrEqual(sWeapon, CLASSNAME)){
 		timeToNextAction[client] -= 0.025;
+		if ((timeToNextAction[client] < 0) && reloading[client]) {
+			reloading[client] = false;
+			SetEntProp(weapon, Prop_Send, "m_iClip1", 4);
+		}
 	}
 }
-
-public void OnPlayerRunCmdPre(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2]) {
-
-}
-
 
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
 {
