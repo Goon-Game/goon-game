@@ -1,4 +1,4 @@
-// ShotgunCoach
+// GunCoach
 
 WeaponData
 {
@@ -17,7 +17,7 @@ WeaponData
 	"secondary_ammo"		"RockSalt"
 
 	"weight"			"4"
-	"item_flags"			"0"
+	"item_flags"		"0"
 	"damage"			"0"
 
 	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
@@ -122,7 +122,7 @@ WeaponData
 		//		bullet - (default) Standard bullet weapon, uses clip sizes and ammo type defined above
 		//		throwable - Throws something away from the player - grenades, molotovs, ..
 		//		custom - Custom coded weapon
-		"weapon_type"		"bullet"
+		"weapon_type"		"custom"
 		
 		"custom_settings"
 		{
@@ -133,6 +133,7 @@ WeaponData
 			// ** Setting this to 0 will allow you to manage ammo ("m_iClip1" value) yourself via plugin. This overrides ammotype to an unknown value.
 			// ** Fire functions will always be called when the weapon is ready to fire, without any ammo checks. Also set this to 0 if your weapon doesn't use ammo.
 			// ** Set "primary_ammo" other than "None" to enable HUD ammo display.
-			"uses_game_ammo"		"1"
+			"uses_game_ammo"		"0"
 		}
+	}
 }
