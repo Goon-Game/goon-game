@@ -8,7 +8,7 @@
 #define CLIP_SIZE 6
 #define RELOAD_AMOUNT 1
 
-#define GUN_DAMAGE 45.0
+#define GUN_DAMAGE 50.0
 #define SPREAD 0.00873 // -> VECTOR_CONE_1DEGREES
 
 #define COOLDOWN_TICK 0.025
@@ -114,47 +114,45 @@ void PrimaryFire(int client, int weapon) {
 	CG_GetShootPosition(client, startPos);
 	GetClientEyeAngles(client, angles);
 	GetAngleVectors(angles, vecFwd, vecRight, vecUp);
-	
-	// We have 4 pellets, I'm saying each is 12 degrees of separation
-	float volleyAngles[] = {-18.0, -6.0, 6.0, 18.0}
 
-	for (int i = 0; i < 4; i++) {
-		float x = volleyAngles[i];
- 
-		vecDir[0] = vecFwd[0] + x * SPREAD * vecRight[0];
-		vecDir[1] = vecFwd[1] + x * SPREAD * vecRight[1];
-		vecDir[2] = vecFwd[2] + x * SPREAD * vecRight[2];
-		
-		GetVectorAngles(vecDir, angles);
-		
-		TR_TraceRayFilter(startPos, angles, MASK_SHOT, RayType_Infinite, TraceEntityFilter, client);
-		TR_GetEndPosition(endPos);
-		TR_GetPlaneNormal(null, traceNormal);
-		int entityHit = TR_GetEntityIndex();
-		
-		if(entityHit == 0) { // hit world
+	GetVectorAngles(vecFwd, angles);
+	
+	TR_TraceRayFilter(startPos, angles, MASK_SHOT, RayType_Infinite, TraceEntityFilter, client);
+	TR_GetEndPosition(endPos);
+	TR_GetPlaneNormal(null, traceNormal);
+	int entityHit = TR_GetEntityIndex();
+	
+	if(entityHit <= 0) { // hit world or missed
+		if (entityHit == 0) { // draw decal if hit world
 			UTIL_ImpactTrace(startPos, DMG_BULLET);
-			
 			float hitAngle = -GetVectorDotProduct(traceNormal, vecDir);
 		}
-		else if (entityHit != -1)
-		{
-			if(IsPlayer(entityHit)){
-				if(!teamplay || GetClientTeam(entityHit) != GetClientTeam(client)){
-					float dmgForce[3];
-					NormalizeVector(vecDir, dmgForce);
-					ScaleVector(dmgForce, 10.0);
-					SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos);
-				}
-			}
-			UTIL_ImpactTrace(startPos, DMG_BULLET);
-		}
+		// Heh heh you missed pal
+		Missed(client, weapon);
 	}
-	
+	else {
+		if(IsPlayer(entityHit)){
+			if(!teamplay || GetClientTeam(entityHit) != GetClientTeam(client)){
+				float dmgForce[3];
+				NormalizeVector(vecDir, dmgForce);
+				ScaleVector(dmgForce, 10.0);
+				SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos);
+			}
+		}
+		UTIL_ImpactTrace(startPos, DMG_BULLET);
+	}
+
 	float viewPunch[3];
 	viewPunch[0] = GetRandomFloat( -0.5, -0.2 );
 	viewPunch[1] = GetRandomFloat( -0.5,  0.5 );
 	Tools_ViewPunch(client, viewPunch);
+}
+
+void Missed(int client, int weapon) {
+	// could do something more interesting here, but for now client just drops the weapon when they miss
+	// TODO: Also probably need to add another "missed" state so the gun actually fires before being yoinked
+	CG_DropWeapon(client, weapon);
+	weaponState[client] = WEAPON_IDLE;
 }
 
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
