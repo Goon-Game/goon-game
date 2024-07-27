@@ -5,7 +5,7 @@ WeaponData
 	// Weapon data is loaded by both the Game and Client DLLs.
 	"printname"			""
 	"viewmodel"			"models/weapons/v_brownbess.mdl"
-	"playermodel"		        "models/weapons/w_brownbess.mdl"
+	"playermodel"		"models/weapons/w_brownbess.mdl"
 	"anim_prefix"		"ar2"
 	"bucket"			"2"
 	"bucket_position"	"1"
@@ -131,7 +131,7 @@ WeaponData
 		//		bullet - (default) Standard bullet weapon, uses clip sizes and ammo type defined above
 		//		throwable - Throws something away from the player - grenades, molotovs, ..
 		//		custom - Custom coded weapon
-		"weapon_type"		"bullet"
+		"weapon_type"		"custom"
 		"use_dynamic"		"1"
 		
 		"custom_settings"
@@ -143,7 +143,7 @@ WeaponData
 			// ** Setting this to 0 will allow you to manage ammo ("m_iClip1" value) yourself via plugin. This overrides ammotype to an unknown value.
 			// ** Fire functions will always be called when the weapon is ready to fire, without any ammo checks. Also set this to 0 if your weapon doesn't use ammo.
 			// ** Set "primary_ammo" other than "None" to enable HUD ammo display.
-			"uses_game_ammo"		"1"
+			"uses_game_ammo"		"0"
 		}
 	}
 }
