@@ -49,8 +49,22 @@ fof/addons/sourcemod/configs/customguns_styles.txt: customguns-fof/configs/custo
 
 customguns: customguns_plugin customguns_other
 
-# gungame_plugin:
+override gungame_sps=$(shell find sm-gungame-fof/addons/sourcemod/scripting -name '*.sp' 2>/dev/null)
+override gungame_incs=sm-gungame-fof/addons/sourcemod/scripting/include $(sourcemod_incs) $(customguns-fof/scripting/include)
+override gungame_inc_flags=$(addprefix -i ,$(gungame_incs))
+override gungame_inc_files=$(shell find sm-gungame-fof/addons/sourcemod/scripting/include -name '*.inc')
 
+gungame_plugin: $(gungame_sps:sm-gungame-fof/addons/sourcemod/scripting/%.sp=$(plugins_dir)/%.smx)
+
+$(plugins_dir)/%.smx: sm-gungame-fof/addons/sourcemod/scripting/%.sp $(gungame_incs) $(gungame_inc_files)
+	@$(SPCOMP) $< -o $@ $(gungame_inc_flags) -O2 -v2
+
+gungame_configs: fof/addons/sourcemod/configs/goongame_weapons.txt
+
+fof/addons/sourcemod/configs/goongame_weapons.txt: sm-gungame-fof/addons/sourcemod/configs/goongame_weapons.txt
+	cp sm-gungame-fof/addons/sourcemod/configs/goongame_weapons.txt fof/addons/sourcemod/configs/goongame_weapons.txt
+
+gungame: gungame_plugin gungame_configs
 
 override goongame_txts=$(shell find scripts -name '*.txt' 2>/dev/null)
 
@@ -95,7 +109,7 @@ asset_makefile: $(WEAPON_MODEL_DIR)/../Makefile
 
 goongame: $(custom_dir)/goongame_scripts.vpk $(WEAPON_MODEL_DIR)/../goongame_assets.vpk goongame_plugin
 
-all: customguns goongame
+all: customguns gungame goongame
 
 # Copy only updated stuff to server and client
 upload_server: all
