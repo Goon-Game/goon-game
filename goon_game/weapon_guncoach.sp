@@ -189,15 +189,15 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 			if (timeToNextAction[client] <= 0) {
 				weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 				if (buttons & IN_ATTACK) {
-					PrintToServer("Attempting Fire of Guncoach!");
+					//PrintToServer("Attempting Fire of Guncoach!");
 					PrimaryAttack(client, weapon);
 				}
 				else if (buttons & IN_RELOAD) {
-					PrintToServer("Attempting Reload of Guncoach!");
+					//PrintToServer("Attempting Reload of Guncoach!");
 					Reload(client, weapon);
 				}
 			} else {
-				PrintToServer("Cannot Execute CMD because %f > 0", timeToNextAction[client]);
+				//PrintToServer("Cannot Execute CMD because %f > 0", timeToNextAction[client]);
 			}
 		}
 	}
@@ -223,7 +223,7 @@ public void CG_OnPrimaryAttack(int client, int weapon){
 	char sWeapon[32];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
 	if(StrEqual(sWeapon, CLASSNAME)){
-        PrintToServer("ERROR! Regular attack got through!");
+        PrintToServer("ERROR! Regular attack got through in Guncoach!");
     }
 }
 

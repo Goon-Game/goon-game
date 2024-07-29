@@ -50,19 +50,22 @@ fof/addons/sourcemod/configs/customguns_styles.txt: customguns-fof/configs/custo
 customguns: customguns_plugin customguns_other
 
 override gungame_sps=$(shell find sm-gungame-fof/addons/sourcemod/scripting -name '*.sp' 2>/dev/null)
-override gungame_incs=sm-gungame-fof/addons/sourcemod/scripting/include $(sourcemod_incs) $(customguns-fof/scripting/include)
+override gungame_incs=sm-gungame-fof/addons/sourcemod/scripting/include $(sourcemod_incs) $(customguns-incs)
 override gungame_inc_flags=$(addprefix -i ,$(gungame_incs))
 override gungame_inc_files=$(shell find sm-gungame-fof/addons/sourcemod/scripting/include -name '*.inc')
 
 gungame_plugin: $(gungame_sps:sm-gungame-fof/addons/sourcemod/scripting/%.sp=$(plugins_dir)/%.smx)
 
-$(plugins_dir)/%.smx: sm-gungame-fof/addons/sourcemod/scripting/%.sp $(gungame_incs) $(gungame_inc_files)
-	@$(SPCOMP) $< -o $@ $(gungame_inc_flags) -O2 -v2
+$(plugins_dir)/%.smx: sm-gungame-fof/addons/sourcemod/scripting/%.sp $(gungame_incs)
+	@$(SPCOMP) $< -o $@ $(gungame_inc_flags) $(customguns_inc_flags) -O2 -v2
 
 gungame_configs: fof/addons/sourcemod/configs/goongame_weapons.txt
 
 fof/addons/sourcemod/configs/goongame_weapons.txt: sm-gungame-fof/addons/sourcemod/configs/goongame_weapons.txt
 	cp sm-gungame-fof/addons/sourcemod/configs/goongame_weapons.txt fof/addons/sourcemod/configs/goongame_weapons.txt
+
+fof/addons/sourcemod/configs/goongame_weapons_short.txt: sm-gungame-fof/addons/sourcemod/configs/goongame_weapons_short.txt
+	cp sm-gungame-fof/addons/sourcemod/configs/goongame_weapons_short.txt fof/addons/sourcemod/configs/goongame_weapons_short.txt
 
 gungame: gungame_plugin gungame_configs
 
@@ -115,6 +118,9 @@ all: customguns gungame goongame
 upload_server: all
 	${RM} -r $(FOF_SERVER_DIR)/fof/custom/*.cache
 	cp -r -u fof $(FOF_SERVER_DIR)
+
+upload_server_nogungame: upload_server
+	${RM} $(FOF_SERVER_DIR)/fof/addons/sourcemod/plugins/gungame_fof.smx
 
 upload_client: all
 	${RM} -r "$(FOF_INSTALL_DIR)/fof/custom/*.cache"
