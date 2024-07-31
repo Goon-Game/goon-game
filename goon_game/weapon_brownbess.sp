@@ -21,7 +21,6 @@
 #define COOLDOWN_RELOAD 10.0
 #define COOLDOWN_DRYFIRE 2.0
 
-
 float timeToNextAction[MAXPLAYERS+1];
 WeaponState weaponState[MAXPLAYERS+1];
 // We're erasing the buttons pressed by the player for reload and secondary attack to prevent them from happening

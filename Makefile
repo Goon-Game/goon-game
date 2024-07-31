@@ -131,7 +131,7 @@ upload: upload_server upload_client
 	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk "$(FOF_INSTALL_DIR)/fof/custom/goongame_assets.vpk"
 
 # # Make a zip folder containing everything
-release_zip: all $(custom_dir)/goongame_assets.vpk
+release_zip: all
 	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(custom_dir)/goongame_assets.vpk 
 	zip -r goongame.zip fof
 

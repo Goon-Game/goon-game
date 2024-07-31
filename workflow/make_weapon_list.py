@@ -14,6 +14,7 @@ WEAPONS_LIST = [
     ("weapon_henryrifle", ""),
     ("weapon_spencer", ""),
     ("weapon_mauser", ""),
+    ("weapon_gauss", ""),
     ("weapon_schofield", ""),
     ("weapon_shotgun", ""),
 
@@ -27,7 +28,7 @@ WEAPONS_LIST = [
     ("weapon_bow", ""),
 
     # Ok
-    ("weapon_shovel", ""),
+    #("weapon_shovel", ""),
     ("weapon_coachgun", ""),
     ("weapon_remington_army", ""),
     ("weapon_volcanic", ""),
@@ -46,9 +47,11 @@ WEAPONS_LIST = [
     ("weapon_weeze_wacker", ""),
     ("weapon_dynamite", ""),
     ("weapon_fists_ghost", "weapon_ghostgun"),
+    
 
     # Winner!
-    ("weapon_oddball", ""),
+    #("weapon_oddball", ""),
+    ("weapon_walker", ""),
 ]
 
 with open(WEAPON_FILE, "w+") as file:
