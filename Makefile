@@ -121,7 +121,7 @@ upload_server: all
 	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(FOF_SERVER_DIR)/fof/custom/goongame_assets.vpk
 
 upload_server_nogungame: upload_server
-	${RM} $(FOF_SERVER_DIR)/fof/addons/sourcemod/plugins/gungame_fof.smx
+	${RM} $(FOF_SERVER_DIR)/fof/addons/sourcemod/plugins/gungame_goon.smx
 
 # THIS DOES NOT WORK IF HLMV++ HAS A MODEL OPEN
 upload_client: all
