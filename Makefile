@@ -118,17 +118,18 @@ all: customguns gungame goongame
 upload_server: all
 	${RM} -r $(FOF_SERVER_DIR)/fof/custom/*.cache
 	cp -r -u fof $(FOF_SERVER_DIR)
+	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(FOF_SERVER_DIR)/fof/custom/goongame_assets.vpk
 
 upload_server_nogungame: upload_server
 	${RM} $(FOF_SERVER_DIR)/fof/addons/sourcemod/plugins/gungame_fof.smx
 
+# THIS DOES NOT WORK IF HLMV++ HAS A MODEL OPEN
 upload_client: all
-	${RM} -r "$(FOF_INSTALL_DIR)/fof/custom/*.cache"
-	cp -r -u fof/custom "$(FOF_INSTALL_DIR)/fof"
+	${RM} -r "$(FOF_INSTALL_DIR)/fof/custom/"*.cache
+	cp "$(custom_dir)/goongame_scripts.vpk" "$(FOF_INSTALL_DIR)/fof/custom/goongame_scripts.vpk"
+	cp $(WEAPON_MODEL_DIR)/../goongame_assets.vpk "$(FOF_INSTALL_DIR)/fof/custom/goongame_assets.vpk"
 
 upload: upload_server upload_client
-	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk $(FOF_SERVER_DIR)/fof/custom/goongame_assets.vpk 
-	cp -u $(WEAPON_MODEL_DIR)/../goongame_assets.vpk "$(FOF_INSTALL_DIR)/fof/custom/goongame_assets.vpk"
 
 # # Make a zip folder containing everything
 release_zip: all
