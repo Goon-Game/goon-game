@@ -1,8 +1,7 @@
 WEAPON_FILE = "sm-gungame-fof/addons/sourcemod/configs/goongame_weapons.txt"
 
-# This list goes (right hand, left hand)
-# typical names are like "weapon_walker"
-# the left hand weapons are like "weapon_walker2"
+# This list goes (left hand, right hand)
+# unless the player has the "left handed" perk selected, in which case the order gets reversed
 WEAPONS_LIST = [
     # Busted
     ("weapon_walker", ""),
@@ -13,7 +12,6 @@ WEAPONS_LIST = [
     ("weapon_peacemaker", ""),
     ("weapon_henryrifle", ""),
     ("weapon_spencer", ""),
-    ("weapon_mauser", ""),
     ("weapon_gauss", ""),
     ("weapon_schofield", ""),
     ("weapon_shotgun", ""),
@@ -32,12 +30,12 @@ WEAPONS_LIST = [
     ("weapon_coachgun", ""),
     ("weapon_remington_army", ""),
     ("weapon_volcanic", ""),
-    ("weapon_sawedoff_shotgun", "weapon_ghostgun2"),
+    ("weapon_sawedoff_shotgun", "weapon_ghostgun"),
     ("weapon_guncoach", ""),
     ("weapon_axe", ""),
 
     # Mediocre
-    ("weapon_deringer", "weapon_deringer2"),
+    ("weapon_deringer", "weapon_deringer"),
     ("weapon_brownbess", ""),
 
     # Terrible
@@ -46,7 +44,7 @@ WEAPONS_LIST = [
     ("weapon_dynamite_belt", "weapon_dynamite_yellow"),
     ("weapon_weeze_wacker", ""),
     ("weapon_dynamite", ""),
-    ("weapon_fists_ghost", "weapon_ghostgun"),
+    ("weapon_ghostgun", "weapon_fists_ghost"),
     
 
     # Winner!
