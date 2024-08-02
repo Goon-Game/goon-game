@@ -12,12 +12,12 @@
 #define SPREAD 0.00873 // -> VECTOR_CONE_1DEGREES
 
 #define STAB_DAMAGE 40.0
-#define STAB_RANGE 80.0
+#define STAB_RANGE 120.0
 
 #define COOLDOWN_TICK 0.025
-#define COOLDOWN_DRAW 4.0
-#define COOLDOWN_PRIMARY_FIRE 2.0
-#define COOLDOWN_SECONDARY_FIRE 4.0
+#define COOLDOWN_DRAW 2.5
+#define COOLDOWN_PRIMARY_FIRE 1.5
+#define COOLDOWN_SECONDARY_FIRE 2.0
 #define COOLDOWN_RELOAD 10.0
 #define COOLDOWN_DRYFIRE 2.0
 
@@ -29,9 +29,13 @@ bool commandReload[MAXPLAYERS+1];
 bool commandAttack2[MAXPLAYERS+1];
 
 enum WeaponState{
+	WEAPON_HOLSTERED,
+	WEAPON_DRAWING,
     WEAPON_IDLE,
     WEAPON_CLICK_RELOAD,
     WEAPON_RELOADING,
+	WEAPON_CLICK_FIRE,
+	WEAPON_FIRING,
 	WEAPON_CLICK_STAB,
 	WEAPON_STABBING,
 };
@@ -84,8 +88,8 @@ public OnClientPutInServer(int client)
 	{
 		//SDKHook(client, SDKHook_PostThinkPost, OnPostThinkPost);
         SDKHook(client, SDKHook_PreThink, OnPreThink);
-		timeToNextAction[client] = COOLDOWN_DRAW;
-		weaponState[client] = WEAPON_IDLE;
+		timeToNextAction[client] = 0;
+		weaponState[client] = WEAPON_HOLSTERED;
 		commandAttack2[client] = false;
 		commandReload[client] = false;
 	}
@@ -96,16 +100,16 @@ public void CG_OnHolster(int client, int weapon, int switchingTo){
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
 	
 	if(StrEqual(sWeapon, CLASSNAME)){
-		timeToNextAction[client] = COOLDOWN_DRAW;
-		weaponState[client] = WEAPON_IDLE;
+		timeToNextAction[client] = 0;
+		weaponState[client] = WEAPON_HOLSTERED;
 	}
 }
 
 void PrimaryAttack(int client, int weapon){
 	int bullets = GetEntProp(weapon, Prop_Send, "m_iClip1");
 	if (bullets == 0) {
-        CG_PlayActivity(weapon, ACT_VM_DRYFIRE); //TODO: add dryfire
-        timeToNextAction[client] = COOLDOWN_DRYFIRE;
+		// chamber empty, just send them to reload
+        weaponState[client] = WEAPON_CLICK_RELOAD;
 	} else {
 		SetEntProp(weapon, Prop_Send, "m_iClip1", 0);
 		CG_SetPlayerAnimation(client, PLAYER_ATTACK1);
@@ -138,7 +142,7 @@ void PrimaryFire(int client, int weapon) {
 				float dmgForce[3];
 				NormalizeVector(vecDir, dmgForce);
 				ScaleVector(dmgForce, 10.0);
-				SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos);
+				SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos, false);
 			}
 		}
 		UTIL_ImpactTrace(startPos, DMG_BULLET);
@@ -183,7 +187,7 @@ void SecondaryFire(int client, int weapon) {
 		{
 			char classname[32];
 			GetEntityClassname(entityHit, classname, sizeof(classname));
-			SDKHooks_TakeDamage(entityHit, client, client, STAB_DAMAGE, DMG_CLUB);
+			SDKHooks_TakeDamage(entityHit, client, client, STAB_DAMAGE, DMG_CLUB, -1, NULL_VECTOR, NULL_VECTOR, false);
 		}
 		
 		// Do additional trace for impact effects
@@ -242,11 +246,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 			if (timeToNextAction[client] <= 0) {
 				int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 				if (buttons & IN_ATTACK) {
-					PrintToServer("Attempting Primay Fire of Brownbess!");
+					PrintToServer("Attempting Primay Fire of Brownbess! Gametime: %f", GetGameTime());
 					PrimaryAttack(client, weapon);
 				}
 				if (commandAttack2[client]) {
-					PrintToServer("Attempting Secondary Fire of Brownbess! %b", commandAttack2[client]);
+					PrintToServer("Attempting Secondary Fire of Brownbess! Gametime: %f", GetGameTime());
 					SecondaryAttack(client, weapon);
 					commandAttack2[client] = false;
 				}
@@ -265,8 +269,8 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 			// Not holding this weapon, reset important stuff
 			commandReload[client] = false;
 			commandAttack2[client] = false;
-			weaponState[client] = WEAPON_IDLE;
-			timeToNextAction[client] = COOLDOWN_DRAW;
+			weaponState[client] = WEAPON_HOLSTERED;
+			timeToNextAction[client] = 0;
 		}
 	}
 }
@@ -279,6 +283,8 @@ public OnPreThink(client) {
 			// Prevent client-side prediction
 			float delayAttack = GetGameTime() + 999.0;
 			int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+			int bullets = GetEntProp(weapon, Prop_Send, "m_iClip1");
+			int vm = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
 			SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", delayAttack);
 			SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", delayAttack);
 			//float accuracy = GetEntPropFloat(weapon, Prop_Data, "m_flAccuracyPenalty");
@@ -287,7 +293,28 @@ public OnPreThink(client) {
             if (timeToNextAction[client] < 0 && weaponState[client] != WEAPON_IDLE) {
                 PrintToServer("----------")
                 PrintToServer("Time's Up!")
-                if (weaponState[client] == WEAPON_CLICK_RELOAD) {
+				if (weaponState[client] == WEAPON_HOLSTERED) {
+					if (bullets > 0) {
+						//SetEntProp(vm, Prop_Send, "m_nSequence", ACT_VM_DRAW_EMPTY);
+					} else {
+						//SetEntProp(vm, Prop_Send, "m_nSequence", ACT_VM_DRAW);
+					}
+					timeToNextAction[client] = COOLDOWN_DRAW;
+					weaponState[client] = WEAPON_DRAWING;
+				} else if (weaponState[client] == WEAPON_DRAWING) {
+					if (bullets > 0) {
+						//SetEntProp(vm, Prop_Send, "m_nSequence", ACT_VM_IDLE);
+					} else {
+						//SetEntProp(vm, Prop_Send, "m_nSequence", ACT_VM_IDLE_1);
+					}
+					//FakeClientCommand(client, "+reload");
+					//FakeClientCommand(client, "-reload");
+					weaponState[client] = WEAPON_IDLE;
+				}
+				else if (weaponState[client] == WEAPON_CLICK_FIRE) {
+
+				}
+                else if (weaponState[client] == WEAPON_CLICK_RELOAD) {
                     CG_PlayActivity(weapon, ACT_VM_RELOAD);
                     timeToNextAction[client] = COOLDOWN_RELOAD;
                     weaponState[client] = WEAPON_RELOADING;
@@ -300,7 +327,22 @@ public OnPreThink(client) {
 					PrintToServer("Reloading to Idle");
                 }
                 PrintToServer("----------")
-            }
+			} else if (weaponState[client] == WEAPON_IDLE) {
+				if (bullets > 0) {
+					//SetEntProp(vm, Prop_Send, "m_nSequence", ACT_VM_IDLE);
+					// SetEntProp(vm, Prop_Send, "m_nAnimationParity", (GetEntProp(vm, Prop_Send, "m_nAnimationParity")+1)  & ( (1<<EF_PARITY_BITS) - 1 ));
+					//SetEntPropFloat(vm, Prop_Data, "m_flCycle", 0.0);
+					//SetEntPropFloat(vm, Prop_Data, "m_flAnimTime", GetGameTime());
+				} else {
+					//SetEntProp(vm, Prop_Send, "m_nSequence", ACT_VM_IDLE_1);
+				}
+			}
+			int m_nNewSequenceParity = GetEntProp(vm, Prop_Send, "m_nNewSequenceParity");
+			int m_nResetEventsParity = GetEntProp(vm, Prop_Send, "m_nResetEventsParity");
+			//float m_flCycle = GetEntPropFloat(vm, Prop_Send, "m_flCycle");
+			float m_flPlaybackRate = GetEntPropFloat(vm, Prop_Send, "m_flPlaybackRate");
+			//PrintToServer("New Sequence: %d \tReset Events: %d \tflCycle: %f \t Playback Rate %f", m_nNewSequenceParity, m_nResetEventsParity, m_flCycle, m_flPlaybackRate);
+			//PrintToServer("New Sequence: %d \tReset Events: %d \t Playback Rate %f", m_nNewSequenceParity, m_nResetEventsParity, m_flPlaybackRate);
 		}
 	}
 }
