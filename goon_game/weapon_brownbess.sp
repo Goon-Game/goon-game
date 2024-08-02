@@ -157,7 +157,7 @@ void PrimaryFire(int client, int weapon) {
 void SecondaryAttack(int client, int weapon) {
 	CG_SetPlayerAnimation(client, PLAYER_ATTACK1); // TODO: player animations for stab?
 	CG_PlayActivity(weapon, ACT_VM_SECONDARYATTACK);
-	PlaySound(weapon, 1);
+	//PlaySound(weapon, 1);
 	SecondaryFire(client, weapon);
 	timeToNextAction[client] = COOLDOWN_SECONDARY_FIRE;
 }
