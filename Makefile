@@ -85,7 +85,7 @@ override goongame_weapon_vtfs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtf' 2>/
 override goongame_weapon_wavs=$(shell find $(WEAPON_MODEL_DIR) -name '*.wav' 2>/dev/null)
 
 override goongame_sps=$(shell find goon_game -name '*.sp' 2>/dev/null)
-override goongame_incs=goon_game/include $(sourcemod_incs)
+override goongame_incs=goon_game/include $(sourcemod_incs) $(gungame_incs) $(customguns_incs)
 override goongame_inc_flags=$(addprefix -i ,$(goongame_incs))
 override goongame_inc_files=$(shell find goon_game/include -name '*.inc')
 

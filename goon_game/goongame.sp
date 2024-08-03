@@ -4,6 +4,7 @@
 #include <sdkhooks>
 #include <dhooks>
 #include <customguns>
+#include <gungame_goon>
 
 #define PLUGIN_VERSION "0.1.0"
 #define PLUGIN_NAME "[FoF] Goon Game"
@@ -28,6 +29,7 @@ public void OnPluginStart() {
     RegConsoleCmd("melee", Melee_Menu);
     //RegConsoleCmd("melee", Melee_Menu);
     //RegConsoleCmd("misc", Misc_Menu);
+    RegConsoleCmd("debug", Debug_Client);
 }
 
 public Action Gun_Menu(int client, int args) {
@@ -50,6 +52,13 @@ public Action Melee_Menu(int client, int args) {
     menu.AddItem("weapon_oddball", "Halo Oddball");
     menu.ExitButton = true;
     menu.Display(client, 30);
+    return Plugin_Handled;
+}
+
+public Action Debug_Client(int client, int args) {
+    PrintToChatAll("%sPrinting debug message for %d", CONSOLE_PREFIX, client);
+    //GunGame_PrintClientDebug(client);
+    CG_PrintClientDebug(client);
     return Plugin_Handled;
 }
 
