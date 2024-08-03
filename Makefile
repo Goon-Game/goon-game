@@ -59,7 +59,7 @@ gungame_plugin: $(gungame_sps:sm-gungame-fof/addons/sourcemod/scripting/%.sp=$(p
 $(plugins_dir)/%.smx: sm-gungame-fof/addons/sourcemod/scripting/%.sp $(gungame_incs)
 	@$(SPCOMP) $< -o $@ $(gungame_inc_flags) $(customguns_inc_flags) -O2 -v2
 
-gungame_configs: fof/addons/sourcemod/configs/goongame_weapons.txt fof/addons/sourcemod/configs/goongame_weapons_short.txt fof/addons/sourcemod/configs/goongame_weapons_debug.txt
+gungame_configs: fof/addons/sourcemod/configs/goongame_weapons.txt fof/addons/sourcemod/configs/goongame_weapons_short.txt
 
 fof/addons/sourcemod/configs/goongame_weapons.txt: sm-gungame-fof/addons/sourcemod/configs/goongame_weapons.txt
 	cp sm-gungame-fof/addons/sourcemod/configs/goongame_weapons.txt fof/addons/sourcemod/configs/goongame_weapons.txt
