@@ -13,6 +13,7 @@
 #define GUN_DAMAGE 8.0
 #define SPREAD 0.00873 // -> VECTOR_CONE_1DEGREES
 #define CONE 16.0 // Total degrees of spread
+#define SQUARE 40.0 // Units that the pellets start off-center (since they would otherwise originate at a point at the player's eyes)
 #define PATTERN_DIMENSION 6 // number of pellets making up shotgun pattern
 
 float timeToNextAction[MAXPLAYERS+1];
@@ -95,37 +96,47 @@ public void PrimaryAttack(int client, int weapon){
 }
 
 void PrimaryFire(int client, int weapon) {
-	float angles[3], startPos[3], endPos[3], vecDir[3], traceNormal[3], vecFwd[3], vecUp[3], vecRight[3];
+	float angles[3], startPos[3], endPos[3], vecDir[3], vecOff[3], traceNormal[3], vecFwd[3], vecUp[3], vecRight[3];
 	CG_GetShootPosition(client, startPos);
 	GetClientEyeAngles(client, angles);
 	GetAngleVectors(angles, vecFwd, vecRight, vecUp);
-	
-	// How many bullets in a shotgun spread?
-	// Let's say 16 and see how that goes
 
-	float starting_angle = -CONE / 2;
-	float increment = CONE / PATTERN_DIMENSION;
-
+	float angle_start = -CONE / 2;
+	float angle_increment = CONE / PATTERN_DIMENSION;
 	float volleyAngles[PATTERN_DIMENSION];
 
+	float offset_start = -SQUARE/2;
+	float offset_increment = SQUARE / PATTERN_DIMENSION;
+	float volleyOffsets[PATTERN_DIMENSION];
+
 	for (int i = 0; i < PATTERN_DIMENSION; i++) {
-		volleyAngles[i] = starting_angle + (i*increment);
+		volleyAngles[i] = angle_start + (i*angle_increment);
+		volleyOffsets[i] = offset_start + (i*offset_increment);
 	}
 	
 
 	for (int i = 0; i < PATTERN_DIMENSION; i++) {
 		for (int j = 0; j < PATTERN_DIMENSION; j++) {
-			float x = volleyAngles[i];
-			float y = volleyAngles[j];
+			float x_angle = volleyAngles[i];
+			float y_angle = volleyAngles[j];
 	
-			vecDir[0] = vecFwd[0] + x * SPREAD * vecRight[0] + y * SPREAD * vecUp[0];
-			vecDir[1] = vecFwd[1] + x * SPREAD * vecRight[1] + y * SPREAD * vecUp[1];
-			vecDir[2] = vecFwd[2] + x * SPREAD * vecRight[2] + y * SPREAD * vecUp[2];
+			vecDir[0] = vecFwd[0] + x_angle * SPREAD * vecRight[0] + y_angle * SPREAD * vecUp[0];
+			vecDir[1] = vecFwd[1] + x_angle * SPREAD * vecRight[1] + y_angle * SPREAD * vecUp[1];
+			vecDir[2] = vecFwd[2] + x_angle * SPREAD * vecRight[2] + y_angle * SPREAD * vecUp[2];
 			
 			GetVectorAngles(vecDir, angles);
 			angles[0] += 180;
+
+			float x_offset = volleyOffsets[i];
+			float y_offset = volleyOffsets[j];
+
+			// FOR ANY OTHER GUN, these should be positive
+			// but since we're firing behind us, we want the bullets to keep expanding instead of focusing down later
+			vecOff[0] = startPos[0] - x_offset * vecRight[0] - y_offset * vecUp[0];
+			vecOff[1] = startPos[1] - x_offset * vecRight[1] - y_offset * vecUp[1];
+			vecOff[2] = startPos[2] - x_offset * vecRight[2] - y_offset * vecUp[2];
 			
-			TR_TraceRayFilter(startPos, angles, MASK_SHOT, RayType_Infinite, TraceEntityFilter, client);
+			TR_TraceRayFilter(vecOff, angles, MASK_SHOT, RayType_Infinite, TraceEntityFilter, client);
 			TR_GetEndPosition(endPos);
 			TR_GetPlaneNormal(null, traceNormal);
 			int entityHit = TR_GetEntityIndex();

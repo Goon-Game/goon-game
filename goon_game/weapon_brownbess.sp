@@ -138,12 +138,10 @@ void PrimaryFire(int client, int weapon) {
 	}
 	else if (entityHit != -1) {
 		if(IsPlayer(entityHit)){
-			if(!teamplay || GetClientTeam(entityHit) != GetClientTeam(client)){
-				float dmgForce[3];
-				NormalizeVector(vecDir, dmgForce);
-				ScaleVector(dmgForce, 10.0);
-				SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos, false);
-			}
+			float dmgForce[3];
+			NormalizeVector(vecDir, dmgForce);
+			ScaleVector(dmgForce, 10.0);
+			SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos, false);
 		}
 		UTIL_ImpactTrace(startPos, DMG_BULLET);
 	}
@@ -359,7 +357,7 @@ public void CG_OnSecondaryAttack(int client, int weapon) {
 	char sWeapon[32];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
 	if(StrEqual(sWeapon, CLASSNAME)){
-        PrintToServer("ERROR! Regular secondary attack got through!");
+        PrintToServer("ERROR! Regular %s secondary attack got through!", CLASSNAME);
     }
 }
 
