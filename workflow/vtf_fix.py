@@ -8,7 +8,7 @@
 
 import os
 
-WEAPON_NAME = "brownbess"
+WEAPON_NAME = "weeze_wacker"
 MATERIALS_DIRECTORY = f"/mnt/e/sourcemod/model_compilation/working_model_files/{WEAPON_NAME}/materials"
 
 # Supports all vertexlitgeneric from here https://steamcommunity.com/sharedfiles/filedetails/?id=2162570606

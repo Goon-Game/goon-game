@@ -9,68 +9,58 @@
 #define RELOAD_AMOUNT 1
 
 #define GUN_DAMAGE 50.0
-#define SPREAD 0.00873 // -> VECTOR_CONE_1DEGREES
 
 #define COOLDOWN_TICK 0.025
-#define COOLDOWN_DRAW 1.0
-#define COOLDOWN_PRIMARY_FIRE 2.0
-#define COOLDOWN_STARTING_RELOAD 2.0
-#define COOLDOWN_RELOAD_LOOP 2.0
-#define COOLDOWN_ENDING_RELOAD 2.0
-#define COOLDOWN_DRYFIRE 2.0
-
+#define COOLDOWN_DRAW 1.5
+#define COOLDOWN_ATTACK 1.7
+#define COOLDOWN_DRYFIRE 1.5
+#define COOLDOWN_RELOAD_START 1.5
+#define COOLDOWN_RELOAD_LOOP 1.5
+#define COOLDOWN_RELOAD_END 1.7
 
 float timeToNextAction[MAXPLAYERS+1];
 WeaponState weaponState[MAXPLAYERS+1];
-int bulletCount[MAXPLAYERS+1]; // Cheese to force the bullet count to remain consistent while reloading
+int trueBullets[MAXPLAYERS+1];
+bool loopToggle[MAXPLAYERS+1];
 
 enum WeaponState{
-    WEAPON_IDLE,
-    WEAPON_CLICK_RELOAD,
-    WEAPON_STARTING_RELOAD,
-    WEAPON_RELOADING,
-    WEAPON_ENDING_RELOAD,
+	WEAPON_HOLSTERED,
+	WEAPON_DRAWING,
+	WEAPON_IDLE,
+	WEAPON_CLICK_ATTACK,
+	WEAPON_ATTACKING,
+	WEAPON_DRYFIRE,
+	WEAPON_MISSED,
+	WEAPON_CLICK_RELOAD,
+	WEAPON_RELOAD_STARTING,
+	WEAPON_RELOAD_FIRST_LOOP, // For playing the animation before putting a bullet in
+	WEAPON_RELOAD_LOOPING,
+	WEAPON_RELOAD_STOP, // for when player clicks to exit reload animation
+	WEAPON_RELOAD_ENDING,
 };
+
+enum SpecialCommand {
+	FIRE_REGULAR,
+	RELOAD_START,
+	RELOAD_LOOP,
+	RELOAD_INSERT,
+	RELOAD_STOP, // Force stop by clicking
+	RELOAD_END,
+}
+
+enum WeaponSounds {
+	SOUND_FIRE,
+}
 
 char g_FireSounds[][] = {
 	"weapons/peacemaker/peacemaker_single1.wav",
-    "weapons/peacemaker/peacemaker_single2.wav",
-    "weapons/peacemaker/peacemaker_single3.wav",
+	"weapons/peacemaker/peacemaker_single2.wav",
+	"weapons/peacemaker/peacemaker_single3.wav",
 }
 
-
-bool teamplay;
-public void OnMapStart()
-{
-    for(int i=0; i < sizeof(g_FireSounds); i++)
-    {
-        PrecacheSound(g_FireSounds[i]);
-    }
-	teamplay = GetConVarBool(FindConVar("mp_teamplay"));
-}
-
-void PlaySound(int entity, int soundType) {
-	// Play a specified sound
-	// sound types:
-	// 0: draw
-	// 1: primary fire
-	// 2: secondary fire
-	// 3: reload
-
-	for (int i = 0; i < 4; i++) {
-		int pitch = GetRandomInt(85, 110);
-		
-		int index;
-		char sSoundFileName[128];
-
-		if (soundType == 1) {
-			index = GetRandomInt(0, sizeof(g_FireSounds)-1);
-			strcopy(sSoundFileName, sizeof(sSoundFileName), g_FireSounds[index]);
-		}
-
-		EmitSoundToAll(
-				sSoundFileName, entity, SNDCHAN_AUTO, SNDLEVEL_TRAIN,
-				SND_CHANGEPITCH, SNDVOL_NORMAL, pitch);
+public void OnMapStart() {
+	for(int i=0; i < sizeof(g_FireSounds); i++) {
+		PrecacheSound(g_FireSounds[i]);
 	}
 }
 
@@ -78,38 +68,219 @@ public OnClientPutInServer(int client)
 {
 	if (!IsFakeClient(client))
 	{
-		//SDKHook(client, SDKHook_PostThinkPost, OnPostThinkPost);
-        SDKHook(client, SDKHook_PreThink, OnPostThinkPost);
-		timeToNextAction[client] = COOLDOWN_DRAW;
-		weaponState[client] = WEAPON_IDLE;
+		SDKHook(client, SDKHook_PreThink, OnPreThink);
+		Reset(client);
 	}
 }
 
-public void CG_OnHolster(int client, int weapon, int switchingTo){
-	char sWeapon[32];
-	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-	
-	if(StrEqual(sWeapon, CLASSNAME)){
-		timeToNextAction[client] = COOLDOWN_DRAW;
-		weaponState[client] = WEAPON_IDLE;
+////////////////////////
+// COMMANDS AND LOGIC //
+////////////////////////
+
+/**
+ * To avoid side effects from the base weapon, eat the player's command inputs.
+ * Only advance the weapon's state if it is presently WEAPON_IDLE.
+ */
+public Action OnPlayerRunCmd(client, &iButtons, &Impulse, Float:fVelocity[3], Float:fAngles[3], &iWeapon) {
+	if (!IsFakeClient(client)) {
+		char sWeapon[32];
+		GetClientWeapon(client, sWeapon, sizeof(sWeapon));
+		if(StrEqual(sWeapon, CLASSNAME)) {
+			if (iButtons & IN_ATTACK) {
+				iButtons &= ~IN_ATTACK;
+				if (timeToNextAction[client] <= 0 && weaponState[client] == WEAPON_IDLE) {
+					// The attack call is special because it needs to happen right away
+					// The state will be advanced in there.
+					Attack(client, FIRE_REGULAR);
+				}
+				else if (weaponState[client] == WEAPON_RELOAD_LOOPING) {
+					weaponState[client] = WEAPON_RELOAD_STOP; // Another special case
+				}
+			}
+			if (iButtons & IN_ATTACK2) {
+				iButtons &= ~IN_ATTACK2; // no related state in this case, just let it pass
+			}
+			if (iButtons & IN_RELOAD) {
+				iButtons &= ~IN_RELOAD;
+				if (timeToNextAction[client] <= 0 && weaponState[client] == WEAPON_IDLE) {
+					weaponState[client] = WEAPON_CLICK_RELOAD;
+				}
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
+/**
+ * This is the state machine where most of the weapon's logic goes.
+ * THIS IS THE ONLY PLACE WHERE TIME TO NEXT ACTION SHOULD BE CHANGED WHEN DOING STUFF
+ * 
+ * Some animations may be played here, but if possible they should be
+ * left to the base fof weapon or put in their own functions like Attack
+ */
+public OnPreThink(client) {
+	if (!IsFakeClient(client) && IsPlayerAlive(client)) {
+		char sWeapon[32];
+		GetClientWeapon(client, sWeapon, sizeof(sWeapon));
+		if(StrEqual(sWeapon, CLASSNAME)) {
+			// Prevent client-side prediction
+			int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+			float delayAttack = GetGameTime() + 999.0;
+			SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", delayAttack);
+			SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", delayAttack);
+			timeToNextAction[client] -= COOLDOWN_TICK;
+			if (timeToNextAction[client] < 0 && weaponState[client] != WEAPON_IDLE) {
+				switch (weaponState[client]) {
+					case (WEAPON_HOLSTERED): {
+						// Best to let the weapon animate its own draw, unless it's REALLY broken
+						timeToNextAction[client] = COOLDOWN_DRAW;
+						weaponState[client] = WEAPON_DRAWING;
+					}
+					case (WEAPON_DRAWING): {
+						weaponState[client] = WEAPON_IDLE;
+					}
+					case (WEAPON_CLICK_ATTACK): {
+						// Attack() already called in OnPlayerRunCmd
+						timeToNextAction[client] = COOLDOWN_ATTACK;
+						weaponState[client] = WEAPON_ATTACKING;
+					}
+					case (WEAPON_ATTACKING): {
+						weaponState[client] = WEAPON_IDLE;
+					}
+					case (WEAPON_DRYFIRE): {
+						timeToNextAction[client] = COOLDOWN_DRYFIRE;
+						weaponState[client] = WEAPON_ATTACKING;
+					}
+					case (WEAPON_MISSED): {
+						// Heheh you missed, pal
+						CG_DropWeapon(client, weapon);
+						Reset(client);
+					}
+					case (WEAPON_CLICK_RELOAD): {
+						// Only *read* from the prop when you first click reload
+						trueBullets[client] = GetEntProp(weapon, Prop_Send, "m_iClip1");
+						loopToggle[client] = true;
+						PrintToServer("CLICK RELOAD WITH %d BULLETS", trueBullets[client]);
+						if (trueBullets[client] < CLIP_SIZE) {
+							Reload(client, weapon, RELOAD_START);
+							timeToNextAction[client] = COOLDOWN_RELOAD_START;
+							weaponState[client] = WEAPON_RELOAD_STARTING;
+						} else {
+							weaponState[client] = WEAPON_IDLE;
+						}
+					}
+					case (WEAPON_RELOAD_STARTING): {
+						PrintToServer("START RELOAD WITH %d BULLETS", trueBullets[client]);
+						Reload(client, weapon, RELOAD_LOOP);
+						timeToNextAction[client] = COOLDOWN_RELOAD_LOOP;
+						weaponState[client] = WEAPON_RELOAD_LOOPING;
+					}
+					case (WEAPON_RELOAD_LOOPING): {
+						PrintToServer("RELOAD LOOP WITH %d BULLETS", trueBullets[client]);
+						Reload(client, weapon, RELOAD_INSERT);
+						if (trueBullets[client] >= CLIP_SIZE) {
+							Reload(client, weapon, RELOAD_END);
+							timeToNextAction[client] = COOLDOWN_RELOAD_END;
+							weaponState[client] = WEAPON_RELOAD_ENDING;
+						} else {
+							Reload(client, weapon, RELOAD_LOOP);
+							timeToNextAction[client] = COOLDOWN_RELOAD_LOOP;
+							weaponState[client] = WEAPON_RELOAD_LOOPING;
+						}
+					}
+					case (WEAPON_RELOAD_STOP): {
+						PrintToServer("RELOAD STOP WITH %d BULLETS", trueBullets[client]);
+						Reload(client, weapon, RELOAD_STOP);
+						timeToNextAction[client] = COOLDOWN_RELOAD_END;
+						weaponState[client] = WEAPON_RELOAD_ENDING;
+					}
+					case (WEAPON_RELOAD_ENDING): {
+						PrintToServer("END RELOAD WITH %d BULLETS", trueBullets[client]);
+						weaponState[client] = WEAPON_IDLE;
+					}
+					default: {
+						// Something messed up, shouldn't be able to get here
+						PrintToServer("BIG PROBLEM: Invalid state encountered in %s", CLASSNAME);
+						weaponState[client] = WEAPON_IDLE;
+					}
+				}
+			}
+		} else {
+			Reset(client);
+		}
 	}
 }
 
-public void PrimaryAttack(int client, int weapon){
-	if (bulletCount[client] == 0) {
-        CG_PlayActivity(weapon, ACT_VM_DRYFIRE);
-        timeToNextAction[client] = COOLDOWN_DRYFIRE;
-	} else {
-        bulletCount[client] -= 1;
-		CG_SetPlayerAnimation(client, PLAYER_ATTACK1);
-		CG_PlayActivity(weapon, ACT_VM_PRIMARYATTACK);
-		PlaySound(weapon, 1);
-		PrimaryFire(client, weapon);
-		timeToNextAction[client] = COOLDOWN_PRIMARY_FIRE;
+void Attack(int client, SpecialCommand fire) {
+	int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+	int bullets = GetEntProp(weapon, Prop_Send, "m_iClip1");
+	switch (fire) {
+		case (FIRE_REGULAR): {
+			if (bullets > 0) {
+				SetEntProp(weapon, Prop_Send, "m_iClip1", bullets-1);
+				CG_SetPlayerAnimation(client, PLAYER_ATTACK1);
+				CG_PlayActivity(weapon, ACT_VM_PRIMARYATTACK);
+				PlaySound(weapon, SOUND_FIRE);
+				Fire(client, weapon);
+				weaponState[client] = WEAPON_CLICK_ATTACK;
+			} else {
+				CG_PlayActivity(weapon, ACT_VM_DRYFIRE);
+				weaponState[client] = WEAPON_DRYFIRE;
+			}
+		}
 	}
 }
 
-void PrimaryFire(int client, int weapon) {
+/**
+ * This guy determines what actually happens when we say 'reload'
+ */
+void Reload(int client, int weapon, SpecialCommand reload) {
+	// The sequence durations don't really matter, as far as
+	// they are long enough to not end before the next action
+	// I'm just tying them to the cooldown lengths so they roughly change in proportion
+	switch (reload) {
+		case (RELOAD_START): {
+			CG_SetPlayerAnimation(client, PLAYER_RELOAD);
+			vmSeq(client, 10, COOLDOWN_RELOAD_START);
+		}
+		case (RELOAD_LOOP):  {
+			// Can't interrupt a sequence with itself, so we've gotta do some toggling
+			// needs to always start with sequence 12 to work, since
+			// sequence 10 auto triggers 11 and 11 can't interrupt 11
+			CG_SetPlayerAnimation(client, PLAYER_RELOAD);
+			if (loopToggle[client]) {
+				vmSeq(client, 12, COOLDOWN_RELOAD_LOOP);
+				loopToggle[client] = false;
+			} else {
+				vmSeq(client, 11, COOLDOWN_RELOAD_LOOP);
+				loopToggle[client] = true;
+			}
+		}
+		case (RELOAD_INSERT): {
+			trueBullets[client] = trueBullets[client] + RELOAD_AMOUNT;
+			SetEntProp(weapon, Prop_Send, "m_iClip1", trueBullets[client]);
+		}
+		case (RELOAD_STOP): {
+			trueBullets[client] = trueBullets[client] + RELOAD_AMOUNT;
+			SetEntProp(weapon, Prop_Send, "m_iClip1", trueBullets[client]);
+			CG_SetPlayerAnimation(client, PLAYER_RELOAD);
+			vmSeq(client, 13, COOLDOWN_RELOAD_END);
+		}
+		case (RELOAD_END): {
+			CG_SetPlayerAnimation(client, PLAYER_RELOAD);
+			vmSeq(client, 13, COOLDOWN_RELOAD_END);
+		}
+		default: {
+			PrintToServer("BIG PROBLEM: Unknown reload command in %s", CLASSNAME);
+		}
+	}
+}
+
+//////////////////////////////////////
+// BULLETS, PROJECTILES, EXPLOSIONS //
+//////////////////////////////////////
+
+void Fire(int client, int weapon) {
 	float angles[3], startPos[3], endPos[3], vecDir[3], traceNormal[3], vecFwd[3], vecUp[3], vecRight[3];
 	CG_GetShootPosition(client, startPos);
 	GetClientEyeAngles(client, angles);
@@ -127,17 +298,14 @@ void PrimaryFire(int client, int weapon) {
 			UTIL_ImpactTrace(startPos, DMG_BULLET);
 			float hitAngle = -GetVectorDotProduct(traceNormal, vecDir);
 		}
-		// Heh heh you missed pal
-		Missed(client, weapon);
+		weaponState[client] = WEAPON_MISSED;
 	}
 	else {
 		if(IsPlayer(entityHit)){
-			if(!teamplay || GetClientTeam(entityHit) != GetClientTeam(client)){
-				float dmgForce[3];
-				NormalizeVector(vecDir, dmgForce);
-				ScaleVector(dmgForce, 10.0);
-				SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos);
-			}
+			float dmgForce[3];
+			NormalizeVector(vecDir, dmgForce);
+			ScaleVector(dmgForce, 10.0);
+			SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos);
 		}
 		UTIL_ImpactTrace(startPos, DMG_BULLET);
 	}
@@ -148,90 +316,45 @@ void PrimaryFire(int client, int weapon) {
 	Tools_ViewPunch(client, viewPunch);
 }
 
-void Missed(int client, int weapon) {
-	// could do something more interesting here, but for now client just drops the weapon when they miss
-	// TODO: Also probably need to add another "missed" state so the gun actually fires before being yoinked
-	CG_DropWeapon(client, weapon);
-	weaponState[client] = WEAPON_IDLE;
+///////////////////////////////////
+// HELPERS AND OTHER MISC THINGS //
+///////////////////////////////////
+
+void Reset(client) {
+	timeToNextAction[client] = 0.0;
+	weaponState[client] = WEAPON_HOLSTERED;
 }
 
-public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
-{
-	if (!IsFakeClient(client))
-	{
-		char sWeapon[32];
-		GetClientWeapon(client, sWeapon, sizeof(sWeapon));
-		if(StrEqual(sWeapon, CLASSNAME)) {
-			if (timeToNextAction[client] <= 0) {
-				weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-				if (buttons & IN_ATTACK) {
-					PrintToServer("Attempting Fire of Weeze Wacker!");
-					PrimaryAttack(client, weapon);
-				}
-				else if (buttons & IN_RELOAD) {
-					PrintToServer("Attempting Reload of Weeze Wacker!");
-                    int bullets = GetEntProp(weapon, Prop_Send, "m_iClip1");
-                    if ((weaponState[client] == WEAPON_IDLE) && (bullets < CLIP_SIZE)) {
-                        weaponState[client] = WEAPON_CLICK_RELOAD;
-                    }
-				}
-			}
+public bool TraceEntityFilter(int entity, int mask, any data){
+	if (entity == data)
+		return false;
+	return true;
+}
+
+void PlaySound(int entity, WeaponSounds soundType) {
+	int index;
+	char sSoundFileName[128];
+	int pitch = GetRandomInt(85, 110);
+	switch (soundType) {
+		case (SOUND_FIRE): {
+			index = GetRandomInt(0, sizeof(g_FireSounds)-1);
+			strcopy(sSoundFileName, sizeof(sSoundFileName), g_FireSounds[index]);
+		}
+		default: {
+			return;
 		}
 	}
+	
+	EmitSoundToAll(
+			sSoundFileName, entity, SNDCHAN_AUTO, SNDLEVEL_TRAIN,
+			SND_CHANGEPITCH, SNDVOL_NORMAL, pitch);
 }
 
-public OnPostThinkPost(client) {
-	if (!IsFakeClient(client) && IsPlayerAlive(client)){
-		char sWeapon[32];
-		GetClientWeapon(client, sWeapon, sizeof(sWeapon));
-		if(StrEqual(sWeapon, CLASSNAME)) {
-			// Prevent client-side prediction
-			float delayAttack = GetGameTime() + 999.0;
-			int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-			SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", delayAttack);
-			SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", delayAttack);
-            SetEntProp(weapon, Prop_Send, "m_iClip1", bulletCount[client]);
-			//float accuracy = GetEntPropFloat(weapon, Prop_Data, "m_flAccuracyPenalty");
-			//PrintToServer("Weapon Accuracy: %f", accuracy);
-
-            timeToNextAction[client] -= COOLDOWN_TICK;
-            if (timeToNextAction[client] < 0 && weaponState[client] != WEAPON_IDLE) {
-                PrintToServer("----------")
-                PrintToServer("Time's Up!")
-                if (weaponState[client] == WEAPON_CLICK_RELOAD) {
-                    CG_PlayActivity(weapon, ACT_VM_RELOAD_START);
-                    timeToNextAction[client] = COOLDOWN_STARTING_RELOAD;
-                    weaponState[client] = WEAPON_STARTING_RELOAD;
-                    PrintToServer("Click Reload to Starting Reload");
-                } 
-                else if(weaponState[client] == WEAPON_STARTING_RELOAD)
-                {
-                    CG_PlayActivity(weapon, ACT_VM_RELOAD);
-                    timeToNextAction[client] = COOLDOWN_RELOAD_LOOP;
-                    weaponState[client] = WEAPON_RELOADING;
-                    PrintToServer("Starting Reload to Reloading");
-                }
-                else if (weaponState[client] == WEAPON_RELOADING)
-                {
-                    if (bulletCount[client] >= CLIP_SIZE) {
-                        CG_PlayActivity(weapon, ACT_VM_RELOAD_FINISH);
-                        timeToNextAction[client] = COOLDOWN_ENDING_RELOAD;
-                        weaponState[client] = WEAPON_ENDING_RELOAD;
-                        PrintToServer("Reloading to Ending Reload");
-                    } else {
-                        bulletCount[client] += RELOAD_AMOUNT;
-                        CG_PlayActivity(weapon, ACT_VM_RELOAD);
-                        timeToNextAction[client] = COOLDOWN_RELOAD_LOOP;
-                        PrintToServer("Looping Reload");
-                    }
-                }
-                else if (weaponState[client] == WEAPON_ENDING_RELOAD) {
-                    weaponState[client] = WEAPON_IDLE;
-                    PrintToServer("Ending Reload to Idle");
-                }
-                PrintToServer("----------")
-            }
-		}
+public void CG_OnHolster(int client, int weapon, int switchingTo){
+	char sWeapon[32];
+	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
+	if(StrEqual(sWeapon, CLASSNAME)){
+		Reset(client);
 	}
 }
 
@@ -239,12 +362,14 @@ public void CG_OnPrimaryAttack(int client, int weapon){
 	char sWeapon[32];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
 	if(StrEqual(sWeapon, CLASSNAME)){
-        PrintToServer("ERROR! Regular attack got through!");
+        PrintToServer("ERROR! Regular %s primary attack got through!", CLASSNAME);
     }
 }
 
-public bool TraceEntityFilter(int entity, int mask, any data){
-	if (entity == data)
-		return false;
-	return true;
+public void CG_OnSecondaryAttack(int client, int weapon) {
+	char sWeapon[32];
+	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
+	if(StrEqual(sWeapon, CLASSNAME)){
+        PrintToServer("ERROR! Regular %s secondary attack got through!", CLASSNAME);
+    }
 }
