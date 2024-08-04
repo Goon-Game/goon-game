@@ -221,8 +221,8 @@ void Attack(int client, SpecialCommand fire) {
 				CG_SetPlayerAnimation(client, PLAYER_ATTACK1);
 				CG_PlayActivity(weapon, ACT_VM_PRIMARYATTACK);
 				PlaySound(weapon, SOUND_FIRE);
-				Fire(client, weapon);
 				weaponState[client] = WEAPON_CLICK_ATTACK;
+				Fire(client, weapon); // slightly different order here so can go to MISSED
 			} else {
 				CG_PlayActivity(weapon, ACT_VM_DRYFIRE);
 				weaponState[client] = WEAPON_DRYFIRE;
