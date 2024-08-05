@@ -9,6 +9,7 @@ WEAPONS_LIST = [
     ("weapon_xbow", "weapon_x_arrow"),
 
     # Very good
+    ("weapon_ak47", ""),
     ("weapon_peacemaker", ""),
     ("weapon_henryrifle", ""),
     ("weapon_spencer", ""),
@@ -48,6 +49,7 @@ WEAPONS_LIST = [
     
 
     # Winner!
+    ("weapon_oddball", ""),
     ("weapon_oddball", ""),
 ]
 

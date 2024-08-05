@@ -15,7 +15,6 @@ SHELL=/bin/bash
 # while my dev environment and fof server is on wsl
 # For your own use, set these things in your .bashrc to whatever
 VPK="$(FOF_INSTALL_DIR)/sdk/bin/vpk.exe"
-STUDIOMDL="$(FOF_INSTALL_DIR)/sdk/bin/studiomdl.exe"
 SPCOMP="$(FOF_SERVER_DIR)/fof/addons/sourcemod/scripting/spcomp"
 
 override sourcemod_incs_dir="$(FOF_SERVER_DIR)/fof/addons/sourcemod/scripting/include"
@@ -67,22 +66,9 @@ fof/addons/sourcemod/configs/goongame_weapons.txt: sm-gungame-fof/addons/sourcem
 fof/addons/sourcemod/configs/goongame_weapons_short.txt: sm-gungame-fof/addons/sourcemod/configs/goongame_weapons_short.txt
 	cp sm-gungame-fof/addons/sourcemod/configs/goongame_weapons_short.txt fof/addons/sourcemod/configs/goongame_weapons_short.txt
 
-
 gungame: gungame_plugin gungame_configs
 
 override goongame_txts=$(shell find scripts -name '*.txt' 2>/dev/null)
-
-override goongame_weapon_mdls=$(shell find $(WEAPON_MODEL_DIR) -name '*.mdl' 2>/dev/null)
-override goongame_weapon_vtxs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtx' 2>/dev/null)
-override goongame_weapon_phys=$(shell find $(WEAPON_MODEL_DIR) -name '*.phy' 2>/dev/null)
-override goongame_weapon_vvds=$(shell find $(WEAPON_MODEL_DIR) -name '*.vvd' 2>/dev/null)
-
-override goongame_weapon_smds=$(shell find $(WEAPON_MODEL_DIR) -name '*.smd' 2>/dev/null)
-
-override goongame_weapon_vmts=$(shell find $(WEAPON_MODEL_DIR) -name '*.vmt' 2>/dev/null)
-override goongame_weapon_vtfs=$(shell find $(WEAPON_MODEL_DIR) -name '*.vtf' 2>/dev/null)
-
-override goongame_weapon_wavs=$(shell find $(WEAPON_MODEL_DIR) -name '*.wav' 2>/dev/null)
 
 override goongame_sps=$(shell find goon_game -name '*.sp' 2>/dev/null)
 override goongame_incs=goon_game/include $(sourcemod_incs) $(gungame_incs) $(customguns_incs)
@@ -98,18 +84,25 @@ $(custom_dir)/goongame_scripts.vpk: $(goongame_txts)
 	${RM} $(custom_dir)/goongame_scripts.vpk
 	$(VPK) a $(custom_dir)/goongame_scripts.vpk $(goongame_txts)
 
-goongame_models: $(goongame_weapon_mdls) $(goongame_weapon_smds) $(goongame_weapon_vtxs) $(goongame_weapon_phys) $(goongame_weapon_vvds)
-goongame_materials: $(goongame_weapon_vmts) $(goongame_weapon_vtfs)
+# Any change to the asset files or folders should be detected
+override goongame_assets = $(shell find $(WEAPON_MODEL_DIR))
+# A model not being there also should be detected
+override goongame_weapon_names=$(shell find $(WEAPON_MODEL_DIR) -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+override goongame_model_files=$(foreach name,$(goongame_weapon_names),$(WEAPON_MODEL_DIR)/$(name)/v_$(name).mdl) $(foreach name,$(goongame_weapon_names),$(WEAPON_MODEL_DIR)/$(name)/w_$(name).mdl)
 
-# TODO: this is extremely hacky, but VPK doesn't want to cooperate
-$(WEAPON_MODEL_DIR)/../goongame_assets.vpk: goongame_models goongame_materials $(goongame_weapon_wavs) asset_makefile
+# % is gonna be name/v_name or name/w_name
+$(WEAPON_MODEL_DIR)/%.mdl: workflow/model_Makefile
+	@wildcard_string=$*; \
+	name=$${wildcard_string%%/*}; \
+	cp -u workflow/model_Makefile "$(WEAPON_MODEL_DIR)/$$name/Makefile"; \
+	cd "$(WEAPON_MODEL_DIR)/$$name" && make; \
+
+# VPK requires executing things in a particular directory
+# Also, this modularization makes it a bit easier to debug asset compilation
+$(WEAPON_MODEL_DIR)/../goongame_assets.vpk: $(goongame_model_files) workflow/asset_Makefile
+	cp -u workflow/asset_Makefile $(WEAPON_MODEL_DIR)/../Makefile
 	${RM} $(WEAPON_MODEL_DIR)/../goongame_assets.vpk
 	(cd $(WEAPON_MODEL_DIR)/.. && make)
-
-$(WEAPON_MODEL_DIR)/../Makefile: workflow/asset_Makefile
-	cp -u workflow/asset_Makefile $(WEAPON_MODEL_DIR)/../Makefile
-
-asset_makefile: $(WEAPON_MODEL_DIR)/../Makefile
 
 goongame: $(custom_dir)/goongame_scripts.vpk $(WEAPON_MODEL_DIR)/../goongame_assets.vpk goongame_plugin
 
@@ -156,5 +149,5 @@ dirs:
 
 # TODO: working on 
 test:
-	@echo $(shell find $(WEAPON_MODEL_DIR) -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+	@echo $(goongame_model_files)
 

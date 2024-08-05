@@ -1,0 +1,31 @@
+# This script is expected to be plonked into every weapon folder
+
+STUDIOMDL="$(FOF_INSTALL_DIR)/sdk/bin/studiomdl.exe"
+
+# Could be an expanding list of everything that ISN'T a model file
+NOT_MODEL_FOLDERS := materials sound musket_gen_anims
+
+
+
+# Find the names of all the top-level folders in here, one for each model associated with the weapon
+override model_names_all=$(shell find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+override model_names=$(filter-out $(NOT_MODEL_FOLDERS), $(model_names_all))
+override model_files=$(foreach name,$(model_names),$(name).mdl)
+
+override dependencies=$(filter-out $(model_files), $(shell find .))
+
+%.mdl: $(dependencies)
+	@qc_name=$*; \
+	name=$${qc_name#*_}; \
+	echo "$$name"; \
+	cd "$$qc_name"; \
+	python ~/proj/sourcemod/goon-game/workflow/bonemerge_fix.py; \
+	$(STUDIOMDL) -game "F:\SteamLibrary\steamapps\common\Fistful of Frags\fof" -nop4 -verbose "$$qc_name"; \
+	cd ../../..; \
+	mv /mnt/f/SteamLibrary/steamapps/common/Fistful\ of\ Frags/fof/models/weapons/* working_model_files/$$name;
+
+# Anything changes in here, recompile them
+all: $(model_files)
+
+test:
+	@echo $(dependencies)

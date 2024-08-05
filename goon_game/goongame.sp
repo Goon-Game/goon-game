@@ -35,11 +35,12 @@ public void OnPluginStart() {
 public Action Gun_Menu(int client, int args) {
     Menu menu = new Menu(Menu_Callback);
     menu.SetTitle("Custom Gun Menu");
+    menu.AddItem("weapon_ak47", "AK-47");
     menu.AddItem("weapon_bigiron", "Big  Iron");
     menu.AddItem("weapon_brownbess", "Brownbess Musket");
     menu.AddItem("weapon_guncoach", "Guncoach");
-    menu.AddItem("weapon_weeze_wacker", "Weeze Wacker");
     menu.AddItem("weapon_gauss", "Hl1 Gauss Gun");
+    menu.AddItem("weapon_weeze_wacker", "Weeze Wacker");
     menu.ExitButton = true;
     menu.Display(client, 30);
     return Plugin_Handled;
