@@ -26,7 +26,7 @@ WEAPONS_LIST = [
     ("weapon_bow", ""),
 
     # Ok
-    #("weapon_shovel", ""),
+    ("weapon_shovel", ""),
     ("weapon_coachgun", ""),
     ("weapon_remington_army", ""),
     ("weapon_volcanic", ""),
@@ -48,8 +48,7 @@ WEAPONS_LIST = [
     
 
     # Winner!
-    #("weapon_oddball", ""),
-    ("weapon_walker", ""),
+    ("weapon_oddball", ""),
 ]
 
 with open(WEAPON_FILE, "w+") as file:

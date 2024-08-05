@@ -124,7 +124,7 @@ public void CG_OnPrimaryAttack(int client, int weapon){
 			EmitGameSoundToAll("Weapon_Crowbar.Melee_Hit", weapon);
 			
 			int entityHit = TR_GetEntityIndex();
-			if(entityHit > 0 && (!IsPlayer(entityHit) || GetClientTeam(entityHit) != GetClientTeam(client)) )
+			if(IsPlayer(entityHit))
 			{
 				char classname[32];
 				GetEntityClassname(entityHit, classname, sizeof(classname));
