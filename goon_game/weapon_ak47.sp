@@ -2,23 +2,27 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <customguns>
+#include <fof_props>
 
 #define CLASSNAME "weapon_ak47"
 
-#define CLIP_SIZE 16
+#define SPREAD 0.00873 // -> VECTOR_CONE_1DEGREES
+#define MAX_SPREAD 20.0
+
+#define CLIP_SIZE 30
 
 #define GUN_DAMAGE 20.0
 
 #define COOLDOWN_TICK 0.025
-#define COOLDOWN_DRAW 1.5
+#define COOLDOWN_DRAW 1.7
 #define COOLDOWN_ATTACK 0.2
 #define COOLDOWN_RELOAD_START 2.5 // First part of reload, up until bullets inserted
-#define COOLDOWN_RELOAD_END 1.0 // Gotta cycle the whatever it's called. Receiver? I don't know guns.
+#define COOLDOWN_RELOAD_END 1.2 // Gotta cycle the whatever it's called. Receiver? I don't know guns.
 
 float timeToNextAction[MAXPLAYERS+1];
 WeaponState weaponState[MAXPLAYERS+1];
 int trueBullets[MAXPLAYERS+1];
-int loopToggle[MAXPLAYERS+1]; // The model has 3 different firing animations, so just pick one of the two that were left out.
+bool loopToggle[MAXPLAYERS+1]; // Toggles between firing animations so the sequence can play back to back
 
 enum WeaponState{
 	WEAPON_HOLSTERED,
@@ -37,25 +41,12 @@ enum SpecialCommand {
 	RELOAD_INSERT,
 }
 
-enum WeaponSounds {
-	SOUND_FIRE,
-}
-
-char g_FireSounds[][] = {
-	"weapons/peacemaker/peacemaker_single1.wav",
-	"weapons/peacemaker/peacemaker_single2.wav",
-	"weapons/peacemaker/peacemaker_single3.wav",
-}
-
-public void OnMapStart() {
-	for(int i=0; i < sizeof(g_FireSounds); i++) {
-		PrecacheSound(g_FireSounds[i]);
-	}
-}
-
 public OnClientPutInServer(int client) {
+	SDKHook(client, SDKHook_TraceAttack, OnTraceAttack);
 	if (!IsFakeClient(client)) {
 		SDKHook(client, SDKHook_PreThink, OnPreThink);
+		//SDKHook(client, SDKHook_PostThink, OnPostThink);
+		//SDKHook(client, SDKHook_FireBulletsPost, OnFireBulletsPost);
 		Reset(client);
 	}
 }
@@ -113,7 +104,7 @@ public OnPreThink(client) {
 			SetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack", delayAttack);
 			SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", delayAttack);
 			timeToNextAction[client] -= COOLDOWN_TICK;
-			if (timeToNextAction[client] < 0 && weaponState[client] != WEAPON_IDLE) {
+			if (timeToNextAction[client] < 0) {
 				switch (weaponState[client]) {
 					case (WEAPON_HOLSTERED): {
 						// Best to let the weapon animate its own draw, unless it's REALLY broken
@@ -122,6 +113,8 @@ public OnPreThink(client) {
 					}
 					case (WEAPON_DRAWING): {
 						weaponState[client] = WEAPON_IDLE;
+					} case (WEAPON_IDLE): {
+						// do nothing
 					}
 					case (WEAPON_CLICK_ATTACK): {
 						// Attack() already called in OnPlayerRunCmd
@@ -173,10 +166,16 @@ void Attack(int client, SpecialCommand fire) {
 			if (bullets > 0) {
 				SetEntProp(weapon, Prop_Send, "m_iClip1", bullets-1);
 				CG_SetPlayerAnimation(client, PLAYER_ATTACK1);
-				CG_PlayActivity(weapon, ACT_VM_PRIMARYATTACK);
-				PlaySound(weapon, SOUND_FIRE);
-				Fire(client, weapon);
-                weaponState[client] = WEAPON_CLICK_ATTACK;
+				if (loopToggle[client]) {
+					vmSeq(client, 1, 2.0);
+					loopToggle[client] = false;
+				} else {
+					vmSeq(client, 2, 2.0);
+					loopToggle[client] = true;
+				}
+				//Fire(client, weapon);
+				FireTrace(client, weapon);
+				weaponState[client] = WEAPON_CLICK_ATTACK;
 			}
 		}
 	}
@@ -208,13 +207,39 @@ void Reload(int client, int weapon, SpecialCommand reload) {
 // BULLETS, PROJECTILES, EXPLOSIONS //
 //////////////////////////////////////
 
+void FireTrace(int client, int weapon) {
+	//CG_FireBullets(client);
+	PrimaryAttack(weapon);
+}
+
 void Fire(int client, int weapon) {
+	EmitGameSoundToAll("Weapon_AK47.Single", weapon);
+
 	float angles[3], startPos[3], endPos[3], vecDir[3], traceNormal[3], vecFwd[3], vecUp[3], vecRight[3];
 	CG_GetShootPosition(client, startPos);
 	GetClientEyeAngles(client, angles);
 	GetAngleVectors(angles, vecFwd, vecRight, vecUp);
 
 	GetVectorAngles(vecFwd, angles);
+
+	// Add impact from inaccuracy to the spread
+	// This is based off the peacemaker's accuracy crouching
+	float inaccuracy = FP_Inaccuracy(client) - 0.06;
+	float spread = inaccuracy * SPREAD * MAX_SPREAD * 100; // I don't know why, but the spread needs to be multiplied to do anything
+	float vecInaccuracy[3];
+	vecInaccuracy[0] = GetRandomFloat( -spread, spread );
+	vecInaccuracy[1] = GetRandomFloat( -spread,  spread );
+	vecInaccuracy[2] = 0.0;
+	
+	// Add impact from view punch to the spread
+	float m_vecPunchAngle[3];
+	GetEntPropVector(client, Prop_Send, "m_vecPunchAngle", m_vecPunchAngle);
+	PrintToServer("Vec Punch 0 %f", m_vecPunchAngle[0]);
+	PrintToServer("Inacc 0 %f", vecInaccuracy[0]);
+
+	angles[0] = angles[0] + m_vecPunchAngle[0] + vecInaccuracy[0];
+	angles[1] = angles[1] + m_vecPunchAngle[1] + vecInaccuracy[1];
+	angles[2] = angles[2] + m_vecPunchAngle[2] + vecInaccuracy[2];
 	
 	TR_TraceRayFilter(startPos, angles, MASK_SHOT, RayType_Infinite, TraceEntityFilter, client);
 	TR_GetEndPosition(endPos);
@@ -224,7 +249,6 @@ void Fire(int client, int weapon) {
 	if(entityHit <= 0) { // hit world or missed
 		if (entityHit == 0) { // draw decal if hit world
 			UTIL_ImpactTrace(startPos, DMG_BULLET);
-			float hitAngle = -GetVectorDotProduct(traceNormal, vecDir);
 		}
 	}
 	else {
@@ -241,6 +265,12 @@ void Fire(int client, int weapon) {
 	viewPunch[0] = GetRandomFloat( -0.5, -0.2 );
 	viewPunch[1] = GetRandomFloat( -0.5,  0.5 );
 	Tools_ViewPunch(client, viewPunch);
+	Tools_AddViewKick(client, 4.0, 1.0, 1.0, 2.0);
+}
+
+public Action OnTraceAttack(victim, &attacker, &inflictor, &Float:damage, &damagetype, &ammotype, hitbox, hitgroup) {
+	PrintToServer("Traceattack, box: %d, group: %d", hitbox, hitgroup);
+	return Plugin_Continue;
 }
 
 ///////////////////////////////////
@@ -248,7 +278,7 @@ void Fire(int client, int weapon) {
 ///////////////////////////////////
 
 void Reset(client) {
-    loopToggle[client] = 0;
+	loopToggle[client] = true;
 	timeToNextAction[client] = 0.0;
 	weaponState[client] = WEAPON_HOLSTERED;
 }
@@ -257,25 +287,6 @@ public bool TraceEntityFilter(int entity, int mask, any data){
 	if (entity == data)
 		return false;
 	return true;
-}
-
-void PlaySound(int entity, WeaponSounds soundType) {
-	int index;
-	char sSoundFileName[128];
-	int pitch = GetRandomInt(85, 110);
-	switch (soundType) {
-		case (SOUND_FIRE): {
-			index = GetRandomInt(0, sizeof(g_FireSounds)-1);
-			strcopy(sSoundFileName, sizeof(sSoundFileName), g_FireSounds[index]);
-		}
-		default: {
-			return;
-		}
-	}
-	
-	EmitSoundToAll(
-			sSoundFileName, entity, SNDCHAN_AUTO, SNDLEVEL_TRAIN,
-			SND_CHANGEPITCH, SNDVOL_NORMAL, pitch);
 }
 
 public void CG_OnHolster(int client, int weapon, int switchingTo){

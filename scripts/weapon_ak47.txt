@@ -3,28 +3,31 @@
 WeaponData
 {
 	// Weapon data is loaded by both the Game and Client DLLs.
-	"printname"			""
 	"viewmodel"			"models/weapons/v_ak47.mdl"
 	"playermodel"		"models/weapons/w_ak47.mdl"
-	"anim_prefix"		"python"
-	"bucket"			"2"
-	"bucket_position"	"1"
 
-	"clip_size"			"1"
-	"default_clip"		"16"
-	"primary_ammo"			"357"
+	// this prefix determines how player holds the gun in third person and will be used by customguns if this gun is custom
+	// more prefixes can be found in weapon scripts files
+	"anim_prefix"			"shotgun"
+
+	"primary_ammo"			"SMG1"
 	"secondary_ammo"		"None"
+	"clip_size"				"30"
+	"default_clip"			"30"
+	"clip2_size"			"-1"
+	"default_clip2"			"-1"
+	
+	"autoswitchto"			"0"
+	"autoswitchfrom"		"0"
 
 	"weight"		"5"
 	"item_flags"		"0"
 
-	"damage"		"44"
-
-	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	// In order to get custom weapon sounds working, copy game_sounds_weapons.txt (can be found in /hl2/scripts)
+	// to /hl2mp/custom/Custom_Weapons/scripts and add a new sound entry, f.e. Weapon_Minigun.Single and then just link it here.
 	SoundData
 	{
-		"empty"		"Weapon_Peacemaker.Empty"
-		"single_shot"	"Weapon_Walker.Single"
+		"single_shot"                   "Weapon_AK47.Single"
 	}
 
 	// Weapon Sprite data is loaded by the Client DLL.
@@ -110,7 +113,7 @@ WeaponData
 		
 		// I have no idea how to hook into setting the unique player animations in fof, such as sliding and horse riding.
 		// Each custom weapon will need to take over a regular fof weapon to inherit its player animations.
-		"fof_base"			"weapon_henryrifle"
+		"fof_base"			"weapon_peacemaker"
 		"use_dynamic"		"1"
 
 		// weapon_type - possible values:

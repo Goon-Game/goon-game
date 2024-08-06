@@ -39,3 +39,13 @@
 
 	"wave"	"npc/roller/mine/rmine_shockvehicle2.wav"
 }
+
+"Weapon_AK47.Single"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"soundlevel"	"SNDLVL_NORM"
+	"pitch"			"95, 105"
+
+	"wave"			"weapons/ak47/ak47-1.wav"
+}
