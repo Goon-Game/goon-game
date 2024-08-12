@@ -28,6 +28,9 @@ WeaponData
 	SoundData
 	{
 		"single_shot"                   "Weapon_AK47.Single"
+		"draw"							"Weapon_AK47.Draw"
+		"reload_start"					"Weapon_ak47.ReloadStart"
+		"reload_end"					"Weapon_ak47.ReloadEnd"
 	}
 
 	// Weapon Sprite data is loaded by the Client DLL.
@@ -62,25 +65,15 @@ WeaponData
 				"height"	"24"
 		}
 	}
-	
-	ExpOffset // Ironsight
-  	{
-	     "x"   "-2"
- 	     "y"   "-1.9"
-	     "z"   "0.44"
-	     "xf"   "-2"
- 	     "yf"   "-3.66"
-	     "zf"   "-0.5"
-      	}
 
 	Spread // 
   	{
-	     "crouch"	"0.025"
- 	     "idle"	"0.029"
-	     "walk"	"0.055"
-	     "run"	"0.18"
+	     "crouch"	"0.02"
+ 	     "idle"	"0.026"
+	     "walk"	"0.045"
+	     "run"	"0.23"
 	     "jump"	"0.35"
-	     "speed"	"0.5"		
+	     "speed"	"0.43"		
       	}
 
 
@@ -113,7 +106,7 @@ WeaponData
 		
 		// I have no idea how to hook into setting the unique player animations in fof, such as sliding and horse riding.
 		// Each custom weapon will need to take over a regular fof weapon to inherit its player animations.
-		"fof_base"			"weapon_peacemaker"
+		"fof_base"			"weapon_remington_army"
 		"use_dynamic"		"1"
 
 		// weapon_type - possible values:

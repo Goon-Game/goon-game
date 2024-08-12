@@ -3,6 +3,7 @@
 #include <sdkhooks>
 #include <customguns>
 #include <fof_props>
+#include <weapon_functions>
 
 #define CLASSNAME "weapon_ak47"
 
@@ -11,7 +12,18 @@
 
 #define CLIP_SIZE 30
 
-#define GUN_DAMAGE 20.0
+#define GUN_DAMAGE 40.0
+#define HEADSHOT 2.0
+#define CHESTSHOT 1.1
+#define BODYSHOT 1.0
+#define ARMSHOT 0.9
+#define LEGSHOT 0.8
+
+#define RAMPUP 1.2
+#define FALLOFF 0.2
+#define MINRANGE 40.0
+#define MIDRANGE 400.0
+#define MAXRANGE 1024.0
 
 #define COOLDOWN_TICK 0.025
 #define COOLDOWN_DRAW 1.7
@@ -41,12 +53,13 @@ enum SpecialCommand {
 	RELOAD_INSERT,
 }
 
+public OnMapStart() {
+	g_sprite = PrecacheModel("materials/effects/gunshiptracer.vmt");
+}
+
 public OnClientPutInServer(int client) {
-	SDKHook(client, SDKHook_TraceAttack, OnTraceAttack);
 	if (!IsFakeClient(client)) {
 		SDKHook(client, SDKHook_PreThink, OnPreThink);
-		//SDKHook(client, SDKHook_PostThink, OnPostThink);
-		//SDKHook(client, SDKHook_FireBulletsPost, OnFireBulletsPost);
 		Reset(client);
 	}
 }
@@ -108,6 +121,7 @@ public OnPreThink(client) {
 				switch (weaponState[client]) {
 					case (WEAPON_HOLSTERED): {
 						// Best to let the weapon animate its own draw, unless it's REALLY broken
+						EmitGameSoundToAll("Weapon_AK47.Draw", weapon);
 						timeToNextAction[client] = COOLDOWN_DRAW;
 						weaponState[client] = WEAPON_DRAWING;
 					}
@@ -127,7 +141,6 @@ public OnPreThink(client) {
 					case (WEAPON_CLICK_RELOAD): {
 						// Only *read* from the prop when you first click reload
 						trueBullets[client] = GetEntProp(weapon, Prop_Send, "m_iClip1");
-						PrintToServer("CLICK RELOAD WITH %d BULLETS", trueBullets[client]);
 						if (trueBullets[client] < CLIP_SIZE) {
 							Reload(client, weapon, RELOAD_START);
 							timeToNextAction[client] = COOLDOWN_RELOAD_START;
@@ -142,7 +155,6 @@ public OnPreThink(client) {
 						weaponState[client] = WEAPON_RELOAD_ENDING;
 					}
 					case (WEAPON_RELOAD_ENDING): {
-						PrintToServer("END RELOAD WITH %d BULLETS", trueBullets[client]);
 						weaponState[client] = WEAPON_IDLE;
 					}
 					default: {
@@ -173,8 +185,7 @@ void Attack(int client, SpecialCommand fire) {
 					vmSeq(client, 2, 2.0);
 					loopToggle[client] = true;
 				}
-				//Fire(client, weapon);
-				FireTrace(client, weapon);
+				Fire(client, weapon);
 				weaponState[client] = WEAPON_CLICK_ATTACK;
 			}
 		}
@@ -192,10 +203,12 @@ void Reload(int client, int weapon, SpecialCommand reload) {
 		case (RELOAD_START): {
 			CG_SetPlayerAnimation(client, PLAYER_RELOAD);
 			CG_PlayActivity(weapon, ACT_VM_RELOAD); // LMAO this segfaults if you get it wrong
+			EmitGameSoundToAll("Weapon_AK47.ReloadStart", weapon);
 		}
 		case (RELOAD_INSERT): {
 			trueBullets[client] = CLIP_SIZE;
 			SetEntProp(weapon, Prop_Send, "m_iClip1", trueBullets[client]);
+			EmitGameSoundToAll("Weapon_AK47.ReloadEnd", weapon);
 		}
 		default: {
 			PrintToServer("BIG PROBLEM: Unknown reload command in %s", CLASSNAME);
@@ -206,11 +219,6 @@ void Reload(int client, int weapon, SpecialCommand reload) {
 //////////////////////////////////////
 // BULLETS, PROJECTILES, EXPLOSIONS //
 //////////////////////////////////////
-
-void FireTrace(int client, int weapon) {
-	//CG_FireBullets(client);
-	PrimaryAttack(weapon);
-}
 
 void Fire(int client, int weapon) {
 	EmitGameSoundToAll("Weapon_AK47.Single", weapon);
@@ -223,8 +231,8 @@ void Fire(int client, int weapon) {
 	GetVectorAngles(vecFwd, angles);
 
 	// Add impact from inaccuracy to the spread
-	// This is based off the peacemaker's accuracy crouching
-	float inaccuracy = FP_Inaccuracy(client) - 0.06;
+	// This is based off the remington's accuracy crouching
+	float inaccuracy = FP_Inaccuracy(client) - 0.04;
 	float spread = inaccuracy * SPREAD * MAX_SPREAD * 100; // I don't know why, but the spread needs to be multiplied to do anything
 	float vecInaccuracy[3];
 	vecInaccuracy[0] = GetRandomFloat( -spread, spread );
@@ -234,8 +242,6 @@ void Fire(int client, int weapon) {
 	// Add impact from view punch to the spread
 	float m_vecPunchAngle[3];
 	GetEntPropVector(client, Prop_Send, "m_vecPunchAngle", m_vecPunchAngle);
-	PrintToServer("Vec Punch 0 %f", m_vecPunchAngle[0]);
-	PrintToServer("Inacc 0 %f", vecInaccuracy[0]);
 
 	angles[0] = angles[0] + m_vecPunchAngle[0] + vecInaccuracy[0];
 	angles[1] = angles[1] + m_vecPunchAngle[1] + vecInaccuracy[1];
@@ -256,7 +262,12 @@ void Fire(int client, int weapon) {
 			float dmgForce[3];
 			NormalizeVector(vecDir, dmgForce);
 			ScaleVector(dmgForce, 10.0);
-			SDKHooks_TakeDamage(entityHit, client, client, GUN_DAMAGE, DMG_BULLET, weapon, dmgForce, endPos);
+			int hitGroup = TR_GetHitGroup();
+			float distance = GetVectorDistance(startPos, endPos);
+			float falloff = DamageFalloff(distance, RAMPUP, FALLOFF, MINRANGE, MIDRANGE, MAXRANGE);
+			float group = DamageGroup(hitGroup, HEADSHOT, CHESTSHOT, BODYSHOT, ARMSHOT, LEGSHOT);
+			float damageDealt = GUN_DAMAGE * falloff * group;
+			SDKHooks_TakeDamage(entityHit, client, client, damageDealt, DMG_BULLET, weapon, dmgForce, endPos);
 		}
 		UTIL_ImpactTrace(startPos, DMG_BULLET);
 	}
@@ -266,11 +277,6 @@ void Fire(int client, int weapon) {
 	viewPunch[1] = GetRandomFloat( -0.5,  0.5 );
 	Tools_ViewPunch(client, viewPunch);
 	Tools_AddViewKick(client, 4.0, 1.0, 1.0, 2.0);
-}
-
-public Action OnTraceAttack(victim, &attacker, &inflictor, &Float:damage, &damagetype, &ammotype, hitbox, hitgroup) {
-	PrintToServer("Traceattack, box: %d, group: %d", hitbox, hitgroup);
-	return Plugin_Continue;
 }
 
 ///////////////////////////////////
