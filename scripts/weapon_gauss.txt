@@ -27,6 +27,16 @@ WeaponData
 		"special2"                      "Weapon_Gauss.Charged"
 		"special3"                      "Weapon_Gauss.OverCharged"
 	}
+
+	Spread // 
+  	{
+		"crouch"	"0.055"
+		"idle"	"0.058"
+		"walk"	"0.07"
+		"run"	"0.12"
+		"jump"	"0.18"
+		"speed"	"0.33"		
+	}
 	
 	"CustomGunsPluginData"
 	{
@@ -53,7 +63,7 @@ WeaponData
 
 		// I have no idea how to hook into setting the unique player animations in fof, such as sliding and horse riding.
 		// Each custom weapon will need to take over a regular fof weapon to inherit its player animations.
-		"fof_base"			"weapon_coachgun"
+		"fof_base"			"weapon_shotgun"
 		"use_dynamic"		"1"
 		
 		// weapon_type - possible values:
@@ -71,7 +81,7 @@ WeaponData
 			// ** Setting this to 0 will allow you to manage ammo ("m_iClip1" value) yourself via plugin. This overrides ammotype to an unknown value.
 			// ** Fire functions will always be called when the weapon is ready to fire, without any ammo checks. Also set this to 0 if your weapon doesn't use ammo.
 			// ** Set "primary_ammo" other than "None" to enable HUD ammo display.
-			"uses_game_ammo"		"1"
+			"uses_game_ammo"		"0"
 		}
 	}
 }
